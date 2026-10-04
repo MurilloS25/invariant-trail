@@ -1,6 +1,6 @@
 # Plan 0001: Invariant Trail MVP
 
-- Status: in progress (branch `feature/invariant-trail-mvp`)
+- Status: implemented on `feature/invariant-trail-mvp`; outcome and follow-ups below
 - Canonical inputs: `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/HARNESS.md`
 - Related decisions: ADR 0001 (exploration outcomes and state identity), ADR 0002 (protocol kit and failure semantics), ADR 0003 (static Next.js app and Web Worker boundary)
 
@@ -33,7 +33,7 @@ A `Transition` has a stable `id` (unique among the successors of one state), `ki
 
 ### Canonical identity
 
-`canonicalize(value)` produces JSON with object keys sorted by code point, rejecting non-JSON values. The canonical string is used directly as the map key, so identity cannot suffer hash collisions. A short FNV-1a digest is shown in the UI as a display label only. Messages in flight are kept in an order that is normalized when the delivery order does not matter, so equivalent states deduplicate.
+`canonicalize(value)` produces JSON with object keys sorted by UTF-16 code unit, rejecting non-JSON values. The canonical string is used directly as the map key, so identity cannot suffer hash collisions. A short FNV-1a digest is shown in the UI as a display label only. Messages in flight are kept in an order that is normalized when the delivery order does not matter, so equivalent states deduplicate.
 
 ### Exploration
 
@@ -65,16 +65,16 @@ Every outcome carries the engine version, applied limits, counters (`statesDisco
 
 Workflows are declared as clients (who send requests), request handlers (ordered steps against durable state), and an invariant list. The kit supplies the shared environment: an ordered in-flight network, per-client status (`idle`, `waiting`, `done`, `gave-up`), active handlers, and remaining failure budgets.
 
-| Control        | Range  | Semantics                                                                                                                         |
-| -------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| `duplicate`    | 0–2    | Delivering a message may leave a copy in flight; each copy spends one unit.                                                       |
-| `lostResponse` | 0–2    | A response in flight can be dropped after the service already produced its effect.                                                |
-| `delay`        | on/off | A client timeout may fire while its messages are still in flight. Off: a timeout needs the client's traffic to be gone.           |
-| `reorder`      | on/off | Any in-flight message may be delivered next. Off: only the oldest message per destination.                                        |
-| `concurrent`   | on/off | Handlers run step by step and several may interleave. Off: with no crash the handler is atomic; with crash it is one at a time.   |
-| `crash`        | 0–1    | The service can crash between two writes of a running handler; durable writes stay, in-memory progress and the response are lost. |
-| `retry`        | 0–2    | After a timeout a client may resend (same key, next attempt) instead of giving up.                                                |
-| `lateRetry`    | 0–1    | A stale retry timer may resend a request after the client already finished or gave up.                                            |
+| Control        | Range  | Semantics                                                                                                                              |
+| -------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `duplicate`    | 0–2    | Delivering a request may leave a copy in flight; each copy spends one unit. Answers are not duplicated.                                |
+| `lostResponse` | 0–2    | A response in flight can be dropped after the service already produced its effect.                                                     |
+| `delay`        | on/off | A client timeout may fire while its messages are still in flight. Off: a timeout needs the client's traffic to be gone.                |
+| `reorder`      | on/off | Any in-flight message may be delivered next. Off: only the oldest message per destination.                                             |
+| `concurrent`   | on/off | Handlers run step by step and several may interleave. Off: with no crash the handler is atomic; with crash it is one at a time.        |
+| `crash`        | 0–1    | The service can crash after at least one step of a running handler; durable writes stay, in-memory progress and the response are lost. |
+| `retry`        | 0–2    | After a timeout a client may resend (same key, next attempt) instead of giving up.                                                     |
+| `lateRetry`    | 0–1    | A stale retry timer may resend a request after the client already finished or gave up.                                                 |
 
 Budgets are global, stored in state, and strictly decrease, so every combination is finite. Transition order is: client sends, request deliveries (each followed by its duplicate variant), handler steps, response deliveries, timeouts/retries, late retries, then fault injections (drop, crash).
 
@@ -126,7 +126,7 @@ Alternatives rejected:
 
 ## Risks
 
-- **State explosion.** Budgets are tiny and global; limits are validated and clamped; the UI default is conservative (20 000 states) with a hard cap (100 000); the worker keeps the page responsive; `exhausted` is its own outcome. Measure the maximum-fault safe preset and record the figures in the harness docs.
+- **State explosion.** Budgets are tiny and global; limits are validated (out-of-range requests are `invalid`; the UI controls clamp); the UI default is conservative (20 000 states) with a hard cap (100 000); the worker keeps the page responsive; `exhausted` is its own outcome. Measure the maximum-fault safe preset and record the figures in the harness docs.
 - **Unsound narrowing.** Branch truncation or depth cutoffs could make a counterexample non-minimal or hide one. They are counted and shown in the summary; minimality is claimed only for the explored graph.
 - **Over-claiming.** Copy review plus tests asserting wording of results for each status.
 - **Security.** No eval, no `innerHTML`, no network, allowlisted ids, strict schema for URL input, text-only rendering of labels, meta CSP.
@@ -136,3 +136,7 @@ Alternatives rejected:
 ## Decisions and follow-ups
 
 Decisions are recorded in ADRs 0001–0003. Deferred: optional strict JSON import/export, user-authored templates, richer liveness properties (these are safety-only), per-client fault budgets, partition and clock-skew failures, local persistence of recent runs, deployment.
+
+## Outcome record
+
+Delivered: contracts, engine, kit, four templates with golden examples, static app with worker, replay, state diff and causal list, unit and component tests, browser tests, CI. Independent correctness and security reviews found no P0. Fixed: safe presets mislabelled as covering every failure (renamed, excluded controls stated), give-up not offered alongside retry, late answers unlocking dependants of a client that gave up, runner promise rejections hanging the UI, replay not re-checking transition descriptions, limits that hid states shown as none for stopped runs, StrictMode URL load, CSP wording. Deferred with reasons: limit edits discard a running search (intentional and visible), CI action SHA pinning, byte or wall-clock budgets, per-client budgets.

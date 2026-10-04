@@ -61,8 +61,8 @@ export function describeOutcome(outcome: ExplorationOutcome): OutcomeCopy {
           badge: 'No violation found',
           headline: 'No violation found',
           paragraphs: [
-            `The search explored all ${explored} reachable states of this model under these failure settings, and none broke the rule.`,
-            'That covers this model and these settings only. It is not a proof that a real system is correct.',
+            `The search explored all ${explored} reachable states of this model under these failure settings, and none broke the selected rule.`,
+            'That covers this model, these settings and this one rule only. It is not a proof that a real system is correct.',
           ],
         };
       }

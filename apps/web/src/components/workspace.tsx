@@ -65,14 +65,16 @@ export function Workspace({ runner, syncUrl = true }: Props) {
     };
   }, [runner]);
 
+  const urlLoaded = useRef(false);
   useEffect(() => {
-    if (!syncUrl) return;
+    if (!syncUrl || urlLoaded.current) return;
+    urlLoaded.current = true;
     const loaded = readConfigFromUrl();
     if (loaded) dispatch({ type: 'load', ...loaded });
   }, [syncUrl]);
 
   useEffect(() => {
-    if (!syncUrl) return;
+    if (!syncUrl || !urlLoaded.current) return;
     window.history.replaceState(null, '', `?${encodeRequest(toRequest(config))}`);
   }, [config, syncUrl]);
 

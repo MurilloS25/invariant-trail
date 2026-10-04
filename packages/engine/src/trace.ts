@@ -7,7 +7,7 @@ import type {
 } from '@invariant-trail/contracts';
 import { canonicalize } from './canonical';
 import { diffStates, touchesEvidence } from './diff';
-import type { Model } from './model';
+import { toInfo, type Model } from './model';
 
 export interface VisitedNode<S extends Json> {
   state: S;
@@ -85,6 +85,12 @@ export function replayTrace<S extends Json>(model: Model<S>, trace: Counterexamp
     const match = model.successors(state).find((t) => t.id === step.transition.id);
     if (!match) {
       problems.push(`step ${step.index}: transition ${step.transition.id} is not enabled`);
+      break;
+    }
+    if (canonicalize(toInfo(match)) !== canonicalize(step.transition)) {
+      problems.push(
+        `step ${step.index}: recorded transition description differs from the replayed one`,
+      );
       break;
     }
     if (canonicalize(match.next) !== canonicalize(step.after)) {

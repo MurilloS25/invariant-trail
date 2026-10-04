@@ -52,7 +52,7 @@ export const FAULT_CONTROLS: FaultControl[] = [
     id: 'crash',
     kind: 'count',
     label: 'Crash between writes',
-    help: 'The service can stop after one write and before the next. Earlier writes stay.',
+    help: 'The service can stop part-way through a request, after at least one of its steps. Earlier writes stay.',
     max: FAULT_BOUNDS.crash.max,
     unit: 'crashes',
   },

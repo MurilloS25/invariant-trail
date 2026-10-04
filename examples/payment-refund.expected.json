@@ -126,7 +126,7 @@
           "maxBranching": 32
         }
       },
-      "statesDiscovered": 12,
+      "statesDiscovered": 13,
       "limitsHit": [],
       "shortest": 7,
       "violation": "The customer was charged 80 for an order of 40.",
@@ -171,7 +171,7 @@
     },
     {
       "presetId": "idempotent-safe",
-      "title": "Idempotency keys, every failure on",
+      "title": "Idempotency keys, broad failures",
       "invariantId": "refund-within-charged",
       "status": "bounded-safe",
       "request": {
@@ -197,7 +197,7 @@
           "maxBranching": 32
         }
       },
-      "statesDiscovered": 4440,
+      "statesDiscovered": 4823,
       "limitsHit": [],
       "complete": true
     }

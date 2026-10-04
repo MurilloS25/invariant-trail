@@ -118,11 +118,13 @@ export function ResultPanel({ run, config, headingRef }: Props) {
           <div>
             <dt>Limits that hid states</dt>
             <dd>
-              {outcome.limitsHit.length === 0
-                ? 'none'
-                : outcome.limitsHit
-                    .map((l) => (l === 'depth' ? 'step limit' : 'branching limit'))
-                    .join(', ')}
+              {outcome.status === 'cancelled' || outcome.status === 'exhausted'
+                ? 'not known (search stopped early)'
+                : outcome.limitsHit.length === 0
+                  ? 'none'
+                  : outcome.limitsHit
+                      .map((l) => (l === 'depth' ? 'step limit' : 'branching limit'))
+                      .join(', ')}
             </dd>
           </div>
         </dl>

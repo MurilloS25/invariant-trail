@@ -76,7 +76,7 @@ describe('Workspace', () => {
   it('reports a bounded-safe result without claiming proof', async () => {
     const { user } = setup();
     await user.click(
-      screen.getByRole('button', { name: /One conditional update, every failure on/ }),
+      screen.getByRole('button', { name: /One conditional update, broad failures/ }),
     );
     await user.click(screen.getByRole('button', { name: 'Explore' }));
     expect(

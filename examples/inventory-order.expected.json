@@ -135,7 +135,7 @@
     },
     {
       "presetId": "transaction-safe",
-      "title": "One transaction, every failure on",
+      "title": "One transaction, broad failures",
       "invariantId": "no-oversell",
       "status": "bounded-safe",
       "request": {
@@ -161,7 +161,7 @@
           "maxBranching": 32
         }
       },
-      "statesDiscovered": 2557,
+      "statesDiscovered": 3033,
       "limitsHit": [],
       "complete": true
     }

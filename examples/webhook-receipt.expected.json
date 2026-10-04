@@ -112,7 +112,7 @@
     },
     {
       "presetId": "guarded-safe",
-      "title": "Sequence check and event ids, every failure on",
+      "title": "Sequence check and event ids, broad failures",
       "invariantId": "newest-event-wins",
       "status": "bounded-safe",
       "request": {
@@ -139,7 +139,7 @@
           "maxBranching": 32
         }
       },
-      "statesDiscovered": 32981,
+      "statesDiscovered": 39489,
       "limitsHit": [],
       "complete": true
     }

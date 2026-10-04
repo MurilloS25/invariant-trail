@@ -6,7 +6,7 @@ Invariant Trail is a local-first visual failure simulator for finite, stateful w
 
 It is not a workflow orchestrator, distributed-systems model checker, arbitrary-code sandbox, production monitor, or proof of correctness for unbounded systems.
 
-## Proposed components
+## Components (implemented; see the plan and ADRs 0001-0003)
 
 1. **Visual workspace** — template selection, graph and state inspection, invariant/failure controls, limits, progress, and results.
 2. **Contracts** — versioned definitions for state, action, transition, invariant, failure model, search bounds, outcome, and trace step.

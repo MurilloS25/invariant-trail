@@ -57,7 +57,13 @@ function prepare(
 ): { ok: true; value: ResolvedRequest } | { ok: false; outcome: ExplorationOutcome } {
   const parsed = parseExplorationRequest(input);
   if (!parsed.ok) return { ok: false, outcome: invalidOutcome(parsed.issues) };
-  const resolved = resolveRequest(parsed.value);
+  let resolved: ResolveResult;
+  try {
+    resolved = resolveRequest(parsed.value);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { ok: false, outcome: invalidOutcome([`model error: ${message}`.slice(0, 300)]) };
+  }
   if (!resolved.ok)
     return { ok: false, outcome: invalidOutcome(resolved.issues, parsed.value.limits) };
   return { ok: true, value: resolved.value };

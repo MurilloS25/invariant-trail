@@ -293,7 +293,7 @@ export function buildModel(
       const who = clientLabel(message.client);
       const current = state.clients[message.client];
       if (!current) continue;
-      const finishes = current.status !== 'done';
+      const finishes = current.status === 'waiting';
       push(
         {
           id: `receive:${index}`,
@@ -301,10 +301,10 @@ export function buildModel(
           actor: 'Network',
           label: finishes
             ? `${who} receives the answer "${message.result}"`
-            : `${who} receives another answer "${message.result}" and ignores it`,
+            : `${who} receives another answer "${message.result}" and ignores it (it already finished or gave up)`,
           detail: finishes
             ? `${who} now knows the outcome and stops waiting.`
-            : `${who} already finished, so the extra answer changes nothing.`,
+            : `${who} already finished or gave up, so the late answer changes nothing.`,
         },
         {
           ...state,
@@ -319,7 +319,7 @@ export function buildModel(
       );
     }
 
-    // 5. Timeouts: retry while budget remains, otherwise give up.
+    // 5. Timeouts: the client may retry while budget remains, or give up. Both are always offered.
     for (const client of spec.clients) {
       const current = state.clients[client.id];
       if (!current || current.status !== 'waiting') continue;
@@ -348,14 +348,15 @@ export function buildModel(
             net: [...state.net, request],
           },
         );
-      } else {
+      }
+      {
         push(
           {
             id: `give-up:${client.id}`,
             kind: 'action',
             actor: client.label,
             label: `${client.label} times out and gives up`,
-            detail: `No answer arrived in time and no retries are left.`,
+            detail: `No answer arrived in time, so ${client.label} stops waiting and sends nothing more.`,
           },
           {
             ...state,

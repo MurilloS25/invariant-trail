@@ -188,8 +188,9 @@ export const webhookTemplate: TemplateDef = {
     },
     {
       id: 'guarded-safe',
-      title: 'Sequence check and event ids, every failure on',
-      summary: 'The receiver ignores older events and remembers event ids, under every failure.',
+      title: 'Sequence check and event ids, broad failures',
+      summary:
+        'Duplicates, a lost answer, a retry, a late retry, a crash, reordering and concurrency, one of each. Slow answers are off. Only the selected rule is checked; a crash can drop work without breaking a safety rule.',
       design: { ordering: 'ignore-older', dedupe: 'by-event-id' },
       faults: BROAD_FAULTS,
       limits: BROAD_LIMITS,

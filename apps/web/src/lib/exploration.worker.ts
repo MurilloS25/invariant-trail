@@ -1,4 +1,4 @@
-import { runExplorationAsync } from '@invariant-trail/engine';
+import { invalidOutcome, runExplorationAsync } from '@invariant-trail/engine';
 import type { WorkerRequest, WorkerResponse } from './runner';
 
 interface WorkerScope {
@@ -13,6 +13,7 @@ let lastProgress = 0;
 
 scope.onmessage = (event) => {
   const message = event.data;
+  if (typeof message !== 'object' || message === null) return;
   if (message.type === 'cancel') {
     signal.aborted = true;
     return;
@@ -28,7 +29,14 @@ scope.onmessage = (event) => {
       lastProgress = now;
       scope.postMessage({ type: 'progress', stats });
     },
-  }).then((outcome) => {
-    scope.postMessage({ type: 'done', outcome });
-  });
+  }).then(
+    (outcome) => scope.postMessage({ type: 'done', outcome }),
+    (error: unknown) =>
+      scope.postMessage({
+        type: 'done',
+        outcome: invalidOutcome([
+          `model error: ${error instanceof Error ? error.message : String(error)}`.slice(0, 300),
+        ]),
+      }),
+  );
 };

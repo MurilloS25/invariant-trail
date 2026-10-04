@@ -111,8 +111,9 @@ export const paymentTemplate: TemplateDef = {
     },
     {
       id: 'idempotent-safe',
-      title: 'Idempotency keys, every failure on',
-      summary: 'The processor ignores repeated keys, under every failure at once.',
+      title: 'Idempotency keys, broad failures',
+      summary:
+        'Duplicates, a lost answer, a retry, a late retry, a crash, reordering and concurrency, one of each. Slow answers are off. Only the selected rule is checked; a crash can drop work without breaking a safety rule.',
       design: { idempotency: 'on' },
       faults: BROAD_FAULTS,
       limits: BROAD_LIMITS,

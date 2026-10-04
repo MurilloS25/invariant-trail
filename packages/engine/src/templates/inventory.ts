@@ -193,8 +193,9 @@ export const inventoryTemplate: TemplateDef = {
     },
     {
       id: 'transaction-safe',
-      title: 'One transaction, every failure on',
-      summary: 'Unit and order are written together, under every failure at once.',
+      title: 'One transaction, broad failures',
+      summary:
+        'Duplicates, a lost answer, a retry, a late retry, a crash, reordering and concurrency, one of each. Slow answers are off. Only the selected rule is checked; a crash can drop work without breaking a safety rule.',
       design: { writes: 'transactional' },
       faults: BROAD_FAULTS,
       limits: BROAD_LIMITS,

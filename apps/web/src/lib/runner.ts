@@ -1,5 +1,9 @@
 import type { ExplorationOutcome, ExplorationStats } from '@invariant-trail/contracts';
-import { runExplorationAsync } from '@invariant-trail/engine';
+import { invalidOutcome, runExplorationAsync } from '@invariant-trail/engine';
+
+function failureText(error: unknown): string {
+  return `model error: ${error instanceof Error ? error.message : String(error)}`.slice(0, 300);
+}
 
 export interface RunCallbacks {
   onProgress(stats: ExplorationStats): void;
@@ -32,9 +36,14 @@ export const inlineRunner: Runner = (request, callbacks) => {
     onProgress: (stats) => {
       if (!disposed) callbacks.onProgress(stats);
     },
-  }).then((outcome) => {
-    if (!disposed) callbacks.onDone(outcome);
-  });
+  }).then(
+    (outcome) => {
+      if (!disposed) callbacks.onDone(outcome);
+    },
+    (error: unknown) => {
+      if (!disposed) callbacks.onDone(invalidOutcome([failureText(error)]));
+    },
+  );
   return {
     cancel: () => {
       signal.aborted = true;
@@ -59,6 +68,7 @@ export const workerRunner: Runner = (request, callbacks) => {
   worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
     if (finished) return;
     const message = event.data;
+    if (typeof message !== 'object' || message === null) return;
     if (message.type === 'progress') callbacks.onProgress(message.stats);
     else {
       finished = true;

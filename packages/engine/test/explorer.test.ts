@@ -240,6 +240,10 @@ describe('determinism and replay', () => {
     cx.steps[1]!.after = { n: 99 };
     expect(replayTrace(graphModel(graph), cx).ok).toBe(false);
 
+    const relabelled = structuredClone(outcome.counterexample);
+    relabelled.steps[0]!.transition.label = 'something else';
+    expect(replayTrace(graphModel(graph), relabelled).ok).toBe(false);
+
     const wrongId = structuredClone(outcome.counterexample);
     wrongId.steps[0]!.transition.id = 'nope';
     expect(replayTrace(graphModel(graph), wrongId).ok).toBe(false);

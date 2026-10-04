@@ -51,7 +51,7 @@ test.describe('flows', () => {
     page,
   }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: /One conditional update, every failure on/ }).click();
+    await page.getByRole('button', { name: /One conditional update, broad failures/ }).click();
     await explore(page);
     await expect(result(page)).toHaveAttribute('data-status', 'bounded-safe');
     const text = (await result(page).innerText()).toLowerCase();

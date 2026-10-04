@@ -40,7 +40,7 @@ export default function Page() {
             <h1 id="hero-heading">Find the shortest way your workflow breaks.</h1>
             <p className="lede">
               Pick a workflow, allow realistic failures such as duplicate requests, lost answers and
-              crashes, and Invariant Trail searches every ordering within your limits for the
+              crashes, and Invariant Trail searches the orderings within your limits for the
               shortest sequence that breaks a safety rule. Then you can replay it step by step.
             </p>
             <p className="hero-actions">

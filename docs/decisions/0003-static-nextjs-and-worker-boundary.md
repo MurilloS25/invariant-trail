@@ -18,7 +18,7 @@ The product needs no server. Exploration may take noticeable time at upper limit
 
 ## Consequences
 
-Hosting is any static file server. Worker bundling relies on the Next bundler's `new Worker(new URL(...))` support, verified by the production build and end-to-end tests. A meta CSP cannot express `frame-ancestors`; a deploy-time header would be a follow-up if hosting is added.
+Hosting is any static file server. Worker bundling relies on the Next bundler's `new Worker(new URL(...))` support, verified by the production build and end-to-end tests. A meta CSP cannot express `frame-ancestors`, keeps `unsafe-inline` scripts for the framework payload, and does not govern the worker script own response headers, so it is defense in depth only; a deploy-time header would be a follow-up if hosting is added.
 
 ## Alternatives considered
 

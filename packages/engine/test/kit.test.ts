@@ -284,3 +284,30 @@ describe('model hygiene under every failure at once', () => {
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 });
+
+describe('give-up and late answers', () => {
+  const step = (model: Model<ProtocolState>, state: ProtocolState, id: string): ProtocolState => {
+    const found = model.successors(state).find((t) => t.id === id);
+    if (!found) throw new Error(`transition ${id} not enabled`);
+    return found.next;
+  };
+
+  it('offers give-up alongside retry while retries remain', () => {
+    const model = buildModel(counterSpec, f({ lostResponse: 1, retry: 1 }), atMostOnce);
+    let s = step(model, model.initial, 'send:c');
+    s = step(model, s, 'deliver:0');
+    s = step(model, s, 'drop:0');
+    const ids = model.successors(s).map((t) => t.id);
+    expect(ids).toContain('retry:c');
+    expect(ids).toContain('give-up:c');
+  });
+
+  it('keeps a client that gave up in that state when a late answer arrives', () => {
+    const model = buildModel(counterSpec, f({ delay: true }), atMostOnce);
+    let s = step(model, model.initial, 'send:c');
+    s = step(model, s, 'give-up:c');
+    s = step(model, s, 'deliver:0');
+    s = step(model, s, 'receive:0');
+    expect(s.clients.c?.status).toBe('gave-up');
+  });
+});

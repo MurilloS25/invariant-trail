@@ -81,7 +81,7 @@
           "maxBranching": 32
         }
       },
-      "statesDiscovered": 30,
+      "statesDiscovered": 33,
       "limitsHit": [],
       "shortest": 5,
       "violation": "The guest received 2 confirmation emails for one booking.",
@@ -186,7 +186,7 @@
     },
     {
       "presetId": "conditional-update-safe",
-      "title": "One conditional update, every failure on",
+      "title": "One conditional update, broad failures",
       "invariantId": "single-confirmation",
       "status": "bounded-safe",
       "request": {
@@ -212,7 +212,7 @@
           "maxBranching": 32
         }
       },
-      "statesDiscovered": 8068,
+      "statesDiscovered": 9618,
       "limitsHit": [],
       "complete": true
     },

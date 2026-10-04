@@ -205,8 +205,9 @@ export const bookingTemplate: TemplateDef = {
     },
     {
       id: 'conditional-update-safe',
-      title: 'One conditional update, every failure on',
-      summary: 'The same failures against a single atomic conditional update.',
+      title: 'One conditional update, broad failures',
+      summary:
+        'Duplicates, a lost answer, a retry, a late retry, a crash, reordering and concurrency, one of each. Slow answers are off. Only the selected rule is checked; a crash can drop work without breaking a safety rule.',
       design: { guard: 'conditional-write' },
       faults: BROAD_FAULTS,
       limits: BROAD_LIMITS,
