@@ -8,9 +8,8 @@ import {
   resolveRequest,
   type ProtocolState,
 } from '@invariant-trail/engine';
-import { useMemo, useRef, type Dispatch, type KeyboardEvent } from 'react';
+import { useMemo, useRef, type KeyboardEvent } from 'react';
 import { FAULT_NAMES } from '../lib/copy';
-import type { Action } from '../lib/workspace-state';
 import { LifecycleDiagram } from './diagram';
 import { ChangeTable, StateSections } from './state-table';
 
@@ -18,10 +17,10 @@ interface Props {
   outcome: ViolatedOutcome;
   request: ExplorationRequest;
   step: number;
-  dispatch: Dispatch<Action>;
+  onStep(step: number): void;
 }
 
-export function ReplayPanel({ outcome, request, step, dispatch }: Props) {
+export function ReplayPanel({ outcome, request, step, onStep }: Props) {
   const resolved = useMemo(() => resolveRequest(request), [request]);
   const stoneRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const { counterexample } = outcome;
@@ -55,7 +54,7 @@ export function ReplayPanel({ outcome, request, step, dispatch }: Props) {
 
   const go = (next: number, focus = false): void => {
     const clamped = Math.max(0, Math.min(total, next));
-    dispatch({ type: 'selectStep', step: clamped });
+    onStep(clamped);
     if (focus) stoneRefs.current[clamped]?.focus();
   };
 
@@ -78,7 +77,7 @@ export function ReplayPanel({ outcome, request, step, dispatch }: Props) {
 
   return (
     <section className="card replay" aria-labelledby="replay-heading">
-      <h3 id="replay-heading">Replay the shortest path</h3>
+      <h3 id="replay-heading">Shortest example that breaks the rule</h3>
       <p className="help">
         Step through what happened, from the starting state to the broken rule. Use the buttons, or
         the arrow keys while a step is focused.

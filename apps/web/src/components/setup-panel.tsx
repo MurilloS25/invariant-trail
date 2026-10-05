@@ -5,7 +5,7 @@
 
 import { LIMIT_BOUNDS, type FaultSettings } from '@invariant-trail/contracts';
 import { getTemplate, TEMPLATES, type Preset, type TemplateDef } from '@invariant-trail/engine';
-import type { Dispatch } from 'react';
+import { useState, type Dispatch } from 'react';
 import { FAULT_CONTROLS } from '../lib/faults-meta';
 import type { Action, Config, RunState } from '../lib/workspace-state';
 import { LimitField } from './limit-field';
@@ -97,6 +97,31 @@ function FaultControlRow({
   );
 }
 
+/** Timing and crash controls: collapsed until needed, and open whenever one of them is on. */
+function AdvancedFaults({
+  faults,
+  dispatch,
+}: {
+  faults: FaultSettings;
+  dispatch: Dispatch<Action>;
+}) {
+  const advanced = FAULT_CONTROLS.filter((c) => c.group === 'advanced');
+  const anyOn = advanced.some((c) => Boolean(faults[c.id]));
+  const [open, setOpen] = useState(anyOn);
+  return (
+    <details
+      className="advanced"
+      open={open || anyOn}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
+      <summary>Timing, ordering and crashes{anyOn ? ' (some on)' : ''}</summary>
+      {advanced.map((control) => (
+        <FaultControlRow key={control.id} control={control} faults={faults} dispatch={dispatch} />
+      ))}
+    </details>
+  );
+}
+
 export function SetupPanel({ config, run, dispatch, onExplore, onCancel }: Props) {
   const template = getTemplate(config.templateId) as TemplateDef;
   const running = run.phase === 'running';
@@ -155,7 +180,9 @@ export function SetupPanel({ config, run, dispatch, onExplore, onCancel }: Props
       </section>
 
       <fieldset className="group">
-        <legend>2. Safety rule</legend>
+        <legend>
+          2. Safety rule <span className="aka">(also called an invariant)</span>
+        </legend>
         <div className="choice-list">
           {template.invariants.map((invariant) => (
             <label key={invariant.id} className="choice">
@@ -206,11 +233,11 @@ export function SetupPanel({ config, run, dispatch, onExplore, onCancel }: Props
       </fieldset>
 
       <fieldset className="group">
-        <legend>4. Failures to allow</legend>
+        <legend>4. Things that can go wrong</legend>
         <p className="help group-note">
           Each control is a hard cap. The search never injects more than you allow.
         </p>
-        {FAULT_CONTROLS.map((control) => (
+        {FAULT_CONTROLS.filter((c) => c.group === 'common').map((control) => (
           <FaultControlRow
             key={control.id}
             control={control}
@@ -218,14 +245,16 @@ export function SetupPanel({ config, run, dispatch, onExplore, onCancel }: Props
             dispatch={dispatch}
           />
         ))}
+        <AdvancedFaults faults={config.faults} dispatch={dispatch} />
       </fieldset>
 
       <details className="group limits">
         <summary>
           <span className="group-title">5. Search limits</span>
           <span className="limits-summary" data-testid="limits-summary">
-            Up to {limits.maxDepth} steps, {limits.maxStates.toLocaleString('en-US')} states,{' '}
-            {limits.maxBranching} choices per state
+            Try every possible order within these limits: up to {limits.maxDepth} steps,{' '}
+            {limits.maxStates.toLocaleString('en-US')} states, {limits.maxBranching} choices per
+            state
           </span>
         </summary>
         <LimitField

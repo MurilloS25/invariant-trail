@@ -1,29 +1,7 @@
-import type { Lifecycle, LifecycleNode } from '@invariant-trail/engine';
-import { useId } from 'react';
+'use client';
 
-const NODE_W = 148;
-const NODE_H = 54;
-const PAD = 14;
-
-interface Point {
-  x: number;
-  y: number;
-}
-
-const center = (n: LifecycleNode): Point => ({ x: n.x + NODE_W / 2, y: n.y + NODE_H / 2 });
-
-/** Where the line from the node's centre towards `target` leaves the node's rectangle. */
-function border(node: LifecycleNode, target: Point): Point {
-  const c = center(node);
-  const dx = target.x - c.x;
-  const dy = target.y - c.y;
-  if (dx === 0 && dy === 0) return c;
-  const scale = Math.min(
-    dx === 0 ? Infinity : NODE_W / 2 / Math.abs(dx),
-    dy === 0 ? Infinity : NODE_H / 2 / Math.abs(dy),
-  );
-  return { x: c.x + dx * scale, y: c.y + dy * scale };
-}
+import { layoutDiagram, type Lifecycle } from '@invariant-trail/engine';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 interface Props {
   title: string;
@@ -32,116 +10,135 @@ interface Props {
   current: string;
 }
 
+/**
+ * Lifecycle diagram. Wide containers get full labels beside the lines; narrow ones get a vertical
+ * layout with numbered markers that match the numbered table below, so nothing is ever cut off.
+ */
 export function LifecycleDiagram({ title, lifecycle, current }: Props) {
   const uid = useId();
   const markerId = `${uid}-arrow`;
-  const byId = new Map(lifecycle.nodes.map((n) => [n.id, n]));
-  const width = lifecycle.width + PAD * 2;
-  const height = lifecycle.height + PAD * 2;
+  const holder = useRef<HTMLDivElement>(null);
+  const [available, setAvailable] = useState<number | null>(null);
+
+  const wideLayout = useMemo(() => layoutDiagram(lifecycle, 'wide'), [lifecycle]);
+  const narrowLayout = useMemo(() => layoutDiagram(lifecycle, 'narrow'), [lifecycle]);
+
+  useEffect(() => {
+    const node = holder.current;
+    if (!node || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setAvailable(entry.contentRect.width);
+    });
+    observer.observe(node);
+    setAvailable(node.getBoundingClientRect().width);
+    return () => observer.disconnect();
+  }, []);
+
+  const layout = available !== null && available < wideLayout.width ? narrowLayout : wideLayout;
+  const narrow = layout.orientation === 'narrow';
+  const byId = new Map(layout.nodes.map((n) => [n.id, n]));
+  const currentLabel = byId.get(current)?.label ?? current;
 
   return (
-    <div className="diagram">
-      {/* Scrollable regions must be focusable so keyboard users can pan the diagram. */}
-      <div
-        className="diagram-scroll"
-        role="region"
-        aria-label={`${title} diagram, scrollable`}
-        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-        tabIndex={0}
+    <div className="diagram" ref={holder} data-orientation={layout.orientation}>
+      <svg
+        viewBox={`0 0 ${layout.width} ${layout.height}`}
+        role="img"
+        aria-label={`${title} lifecycle. Currently: ${currentLabel}. A table with the same information follows.`}
+        className="diagram-svg"
+        style={{ maxWidth: layout.width }}
       >
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          role="img"
-          aria-label={`${title} lifecycle. Currently: ${byId.get(current)?.label ?? current}. A table with the same information follows.`}
-          className="diagram-svg"
-        >
-          <defs>
-            <marker
-              id={markerId}
-              viewBox="0 0 10 10"
-              refX="9"
-              refY="5"
-              markerWidth="8"
-              markerHeight="8"
-              orient="auto-start-reverse"
+        <defs>
+          <marker
+            id={markerId}
+            viewBox="0 0 10 10"
+            refX="9"
+            refY="5"
+            markerWidth="8"
+            markerHeight="8"
+            orient="auto-start-reverse"
+          >
+            <path d="M0 0L10 5L0 10z" className="diagram-arrow" />
+          </marker>
+        </defs>
+        {layout.edges.map((edge) => (
+          <polyline
+            key={`line-${edge.index}`}
+            points={edge.points.map((p) => p.join(',')).join(' ')}
+            className="diagram-edge"
+            fill="none"
+            markerEnd={`url(#${markerId})`}
+          />
+        ))}
+        {layout.nodes.map((node) => {
+          const active = node.id === current;
+          return (
+            <g key={node.id} className={active ? 'diagram-node is-current' : 'diagram-node'}>
+              <rect x={node.x} y={node.y} width={node.w} height={node.h} rx="8" />
+              <text
+                x={node.x + node.w / 2}
+                y={node.y + (active ? node.h / 2 - 3 : node.h / 2 + 5)}
+                textAnchor="middle"
+                className="diagram-node-label"
+              >
+                {node.label}
+              </text>
+              {active ? (
+                <text
+                  x={node.x + node.w / 2}
+                  y={node.y + node.h / 2 + 14}
+                  textAnchor="middle"
+                  className="diagram-node-tag"
+                >
+                  ● current
+                </text>
+              ) : null}
+            </g>
+          );
+        })}
+        {layout.edges.map((edge) => (
+          <g key={`badge-${edge.index}`} className="diagram-badge" data-edge={edge.index + 1}>
+            <rect
+              x={edge.badge.x}
+              y={edge.badge.y}
+              width={edge.badge.w}
+              height={edge.badge.h}
+              rx={narrow ? edge.badge.h / 2 : 6}
+            />
+            <text
+              x={edge.badge.x + edge.badge.w / 2}
+              y={edge.badge.y + edge.badge.h / 2 + 4.5}
+              textAnchor="middle"
+              className="diagram-edge-label"
             >
-              <path d="M0 0L10 5L0 10z" className="diagram-arrow" />
-            </marker>
-          </defs>
-          <g transform={`translate(${PAD} ${PAD})`}>
-            {lifecycle.edges.map((edge) => {
-              const from = byId.get(edge.from);
-              const to = byId.get(edge.to);
-              if (!from || !to) return null;
-              const a = border(from, center(to));
-              const b = border(to, center(from));
-              const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-              return (
-                <g key={`${edge.from}-${edge.to}`}>
-                  <line
-                    x1={a.x}
-                    y1={a.y}
-                    x2={b.x}
-                    y2={b.y}
-                    className="diagram-edge"
-                    markerEnd={`url(#${markerId})`}
-                  />
-                  <text x={mid.x} y={mid.y - 6} textAnchor="middle" className="diagram-edge-label">
-                    {edge.label}
-                  </text>
-                </g>
-              );
-            })}
-            {lifecycle.nodes.map((node) => {
-              const active = node.id === current;
-              return (
-                <g key={node.id} className={active ? 'diagram-node is-current' : 'diagram-node'}>
-                  <rect x={node.x} y={node.y} width={NODE_W} height={NODE_H} rx="8" />
-                  <text
-                    x={node.x + NODE_W / 2}
-                    y={node.y + (active ? 23 : 32)}
-                    textAnchor="middle"
-                    className="diagram-node-label"
-                  >
-                    {node.label}
-                  </text>
-                  {active ? (
-                    <text
-                      x={node.x + NODE_W / 2}
-                      y={node.y + 42}
-                      textAnchor="middle"
-                      className="diagram-node-tag"
-                    >
-                      ● current
-                    </text>
-                  ) : null}
-                </g>
-              );
-            })}
+              {edge.badge.text}
+            </text>
           </g>
-        </svg>
-      </div>
+        ))}
+      </svg>
       <table className="diagram-table">
         <caption>Text version of the diagram</caption>
         <thead>
           <tr>
+            <th scope="col">#</th>
             <th scope="col">From</th>
             <th scope="col">Event</th>
             <th scope="col">To</th>
           </tr>
         </thead>
         <tbody>
-          {lifecycle.edges.map((edge) => (
-            <tr key={`${edge.from}-${edge.to}`}>
-              <td>{byId.get(edge.from)?.label}</td>
+          {lifecycle.edges.map((edge, i) => (
+            <tr key={`${edge.from}-${edge.to}-${i}`}>
+              <td>{i + 1}</td>
+              <td>{lifecycle.nodes.find((n) => n.id === edge.from)?.label}</td>
               <td>{edge.label}</td>
-              <td>{byId.get(edge.to)?.label}</td>
+              <td>{lifecycle.nodes.find((n) => n.id === edge.to)?.label}</td>
             </tr>
           ))}
         </tbody>
       </table>
       <p className="diagram-current">
-        Stored data is currently in: <strong>{byId.get(current)?.label ?? current}</strong>
+        Stored data is currently in: <strong>{currentLabel}</strong>
       </p>
     </div>
   );

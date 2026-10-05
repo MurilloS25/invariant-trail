@@ -1,13 +1,18 @@
 import { FAULT_BOUNDS, type FaultId, type FaultSettings } from '@invariant-trail/contracts';
 
-export type FaultControl =
+export type FaultControl = (
   | { id: FaultId; kind: 'switch'; label: string; help: string }
-  | { id: FaultId; kind: 'count'; label: string; help: string; max: number; unit: string };
+  | { id: FaultId; kind: 'count'; label: string; help: string; max: number; unit: string }
+) & {
+  /** Common controls are always visible; timing and crash controls sit in a collapsible group. */
+  group: 'common' | 'advanced';
+};
 
 /** Typed failure controls, in the order they are shown. */
 export const FAULT_CONTROLS: FaultControl[] = [
   {
     id: 'duplicate',
+    group: 'common',
     kind: 'count',
     label: 'Duplicate delivery',
     help: 'A request that reaches the service can be delivered again.',
@@ -16,6 +21,7 @@ export const FAULT_CONTROLS: FaultControl[] = [
   },
   {
     id: 'lostResponse',
+    group: 'common',
     kind: 'count',
     label: 'Lost answer',
     help: 'The service does the work, but its answer can vanish on the way back.',
@@ -24,32 +30,37 @@ export const FAULT_CONTROLS: FaultControl[] = [
   },
   {
     id: 'retry',
+    group: 'common',
     kind: 'count',
-    label: 'Retry',
+    label: 'Client retries',
     help: 'A client that hears nothing resends the same request.',
     max: FAULT_BOUNDS.retry.max,
     unit: 'retries',
   },
   {
     id: 'delay',
+    group: 'advanced',
     kind: 'switch',
     label: 'Slow answers',
     help: 'A client may give up waiting while its answer is still on the way.',
   },
   {
     id: 'reorder',
+    group: 'advanced',
     kind: 'switch',
     label: 'Out-of-order delivery',
     help: 'Messages may arrive in any order, not only the order they were sent.',
   },
   {
     id: 'concurrent',
+    group: 'advanced',
     kind: 'switch',
     label: 'Concurrent work',
     help: 'The service handles several requests at once, so their steps can interleave.',
   },
   {
     id: 'crash',
+    group: 'advanced',
     kind: 'count',
     label: 'Crash between writes',
     help: 'The service can stop part-way through a request, after at least one of its steps. Earlier writes stay.',
@@ -58,6 +69,7 @@ export const FAULT_CONTROLS: FaultControl[] = [
   },
   {
     id: 'lateRetry',
+    group: 'advanced',
     kind: 'count',
     label: 'Late retry',
     help: 'An old retry timer can fire after the client already finished or gave up.',

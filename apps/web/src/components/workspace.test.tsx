@@ -25,7 +25,7 @@ describe('Workspace', () => {
     setup();
     expect(screen.getByRole('radio', { name: /Booking confirmation/ })).toBeChecked();
     expect(screen.getByRole('radio', { name: /confirmed at most once/ })).toBeChecked();
-    expect(screen.getByTestId('limits-summary')).toHaveTextContent('Up to 32 steps, 30,000 states');
+    expect(screen.getByTestId('limits-summary')).toHaveTextContent('up to 32 steps, 30,000 states');
     expect(screen.getByText(/Nothing explored yet/)).toBeInTheDocument();
     expect(screen.getByRole('table', { name: 'Text version of the diagram' })).toBeInTheDocument();
   });
@@ -45,7 +45,7 @@ describe('Workspace', () => {
   it('steps through the trail with buttons and arrow keys, showing before and after', async () => {
     const { user } = setup();
     await user.click(screen.getByRole('button', { name: 'Explore' }));
-    await screen.findByRole('heading', { name: 'Replay the shortest path' });
+    await screen.findByRole('heading', { name: 'Shortest example that breaks the rule' });
     await user.click(screen.getByRole('button', { name: 'Next step' }));
     const detail = screen.getByTestId('step-detail');
     expect(detail).toHaveTextContent('Step 1 of 5');
@@ -67,7 +67,7 @@ describe('Workspace', () => {
   it('marks the selected step and uses words, not colour, for failures', async () => {
     const { user } = setup();
     await user.click(screen.getByRole('button', { name: 'Explore' }));
-    await screen.findByRole('heading', { name: 'Replay the shortest path' });
+    await screen.findByRole('heading', { name: 'Shortest example that breaks the rule' });
     expect(screen.getAllByRole('button', { current: 'step' })).toHaveLength(1);
     expect(screen.getAllByText(/Failure: Lost answer/).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Rule broken here').length).toBeGreaterThan(0);
@@ -112,7 +112,7 @@ describe('Workspace', () => {
     const { user, view } = setup();
     expect(await axeViolations(view.container)).toEqual([]);
     await user.click(screen.getByRole('button', { name: 'Explore' }));
-    await screen.findByRole('heading', { name: 'Replay the shortest path' });
+    await screen.findByRole('heading', { name: 'Shortest example that breaks the rule' });
     expect(await axeViolations(view.container)).toEqual([]);
   });
 });

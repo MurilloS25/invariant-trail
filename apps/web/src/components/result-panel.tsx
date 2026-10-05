@@ -13,6 +13,8 @@ interface Props {
   run: RunState;
   config: Config;
   headingRef: Ref<HTMLHeadingElement>;
+  /** Keeps element ids unique when two results are on the page. */
+  idPrefix?: string;
 }
 
 function ReplayCheck({ run }: { run: Extract<RunState, { phase: 'done' }> }) {
@@ -33,13 +35,14 @@ function ReplayCheck({ run }: { run: Extract<RunState, { phase: 'done' }> }) {
   );
 }
 
-export function ResultPanel({ run, config, headingRef }: Props) {
+export function ResultPanel({ run, config, headingRef, idPrefix = 'result' }: Props) {
+  const headingId = `${idPrefix}-heading`;
   const { limits } = config;
 
   if (run.phase === 'idle') {
     return (
-      <section className="card result" aria-labelledby="result-heading">
-        <h3 id="result-heading" ref={headingRef} tabIndex={-1}>
+      <section className="card result" aria-labelledby={headingId}>
+        <h3 id={headingId} ref={headingRef} tabIndex={-1}>
           Result
         </h3>
         <p>
@@ -54,8 +57,8 @@ export function ResultPanel({ run, config, headingRef }: Props) {
   if (run.phase === 'running') {
     const { stats } = run;
     return (
-      <section className="card result" aria-labelledby="result-heading" aria-busy="true">
-        <h3 id="result-heading" ref={headingRef} tabIndex={-1}>
+      <section className="card result" aria-labelledby={headingId} aria-busy="true">
+        <h3 id={headingId} ref={headingRef} tabIndex={-1}>
           Exploring…
         </h3>
         <progress
@@ -78,11 +81,11 @@ export function ResultPanel({ run, config, headingRef }: Props) {
   return (
     <section
       className={`card result result-${copy.tone}`}
-      aria-labelledby="result-heading"
+      aria-labelledby={headingId}
       data-status={outcome.status}
     >
       <StatusBadge tone={copy.tone}>{copy.badge}</StatusBadge>
-      <h3 id="result-heading" ref={headingRef} tabIndex={-1}>
+      <h3 id={headingId} ref={headingRef} tabIndex={-1}>
         {copy.headline}
       </h3>
       {copy.paragraphs.map((text) => (

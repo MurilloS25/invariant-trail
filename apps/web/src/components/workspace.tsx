@@ -22,6 +22,8 @@ interface Props {
   runner?: Runner;
   /** Test seam: skip reading and writing the address bar. */
   syncUrl?: boolean;
+  /** False while another mode is showing: the address bar then belongs to that mode. */
+  active?: boolean;
 }
 
 function readConfigFromUrl(): { config: Config; notice: string | null } | null {
@@ -49,7 +51,7 @@ function readConfigFromUrl(): { config: Config; notice: string | null } | null {
   };
 }
 
-export function Workspace({ runner, syncUrl = true }: Props) {
+export function Workspace({ runner, syncUrl = true, active = true }: Props) {
   const [state, dispatch] = useReducer(reducer, undefined, initialState);
   const controllerRef = useRef<ExplorationController | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -74,9 +76,9 @@ export function Workspace({ runner, syncUrl = true }: Props) {
   }, [syncUrl]);
 
   useEffect(() => {
-    if (!syncUrl || !urlLoaded.current) return;
+    if (!syncUrl || !active || !urlLoaded.current) return;
     window.history.replaceState(null, '', `?${encodeRequest(toRequest(config))}`);
-  }, [config, syncUrl]);
+  }, [config, syncUrl, active]);
 
   // A settings change drops the result and any run still going.
   useEffect(() => {
@@ -114,8 +116,7 @@ export function Workspace({ runner, syncUrl = true }: Props) {
   }, [config, template]);
 
   return (
-    <section id="workspace" className="workspace" aria-labelledby="workspace-heading">
-      <h2 id="workspace-heading">Workspace</h2>
+    <div className="workspace">
       {state.notice ? (
         <p className="notice" role="status">
           {state.notice}{' '}
@@ -142,6 +143,11 @@ export function Workspace({ runner, syncUrl = true }: Props) {
           />
         </div>
         <div className="col-main">
+          <h3 id="workspace-heading">Sandbox</h3>
+          <p className="sandbox-intro">
+            Every technical control is here: choose the workflow, the safety rule, how it is built,
+            and which things can go wrong, then try every possible order within your limits.
+          </p>
           <section className="card about" aria-labelledby="about-heading">
             <h3 id="about-heading">{template.title}</h3>
             <p>{template.story}</p>
@@ -166,11 +172,11 @@ export function Workspace({ runner, syncUrl = true }: Props) {
               outcome={run.outcome}
               request={run.request}
               step={state.step}
-              dispatch={dispatch}
+              onStep={(next) => dispatch({ type: 'selectStep', step: next })}
             />
           ) : null}
         </div>
       </div>
-    </section>
+    </div>
   );
 }
