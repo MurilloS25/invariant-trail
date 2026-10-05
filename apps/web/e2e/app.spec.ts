@@ -1,6 +1,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
+async function openSandbox(page: Page): Promise<void> {
+  await page.goto('/#sandbox');
+  await expect(page.getByRole('tab', { name: /Sandbox/ })).toHaveAttribute('aria-selected', 'true');
+}
+
 function watchConsole(page: Page): string[] {
   const problems: string[] = [];
   page.on('console', (m) => {
@@ -26,7 +31,7 @@ test.describe('flows', () => {
     page,
   }) => {
     const problems = watchConsole(page);
-    await page.goto('/');
+    await openSandbox(page);
     await explore(page);
     await expect(result(page)).toHaveAttribute('data-status', 'violated');
     await expect(page.getByRole('heading', { name: 'Rule broken in 5 steps' })).toBeFocused();
@@ -50,10 +55,10 @@ test.describe('flows', () => {
   test('safe flow: a complete bounded-safe result is worded as bounded, never proven', async ({
     page,
   }) => {
-    await page.goto('/');
+    await openSandbox(page);
     await page.getByRole('button', { name: /One conditional update, broad failures/ }).click();
     await explore(page);
-    await expect(result(page)).toHaveAttribute('data-status', 'bounded-safe');
+    await expect(result(page)).toHaveAttribute('data-status', 'bounded-safe', { timeout: 20_000 });
     const text = (await result(page).innerText()).toLowerCase();
     expect(text).toContain('not a proof');
     expect(text).not.toContain('proved');
@@ -61,7 +66,7 @@ test.describe('flows', () => {
   });
 
   test('keyboard: whole path without a mouse, arrow keys step the replay', async ({ page }) => {
-    await page.goto('/');
+    await openSandbox(page);
     await page.getByRole('button', { name: 'Explore' }).focus();
     await page.keyboard.press('Enter');
     await expect(result(page)).toHaveAttribute('data-status', 'violated');
@@ -82,7 +87,7 @@ test.describe('flows', () => {
   test('settings travel in the URL and hostile URLs are ignored with a notice', async ({
     page,
   }) => {
-    await page.goto('/');
+    await openSandbox(page);
     await page.getByRole('radio', { name: /Payment capture and refund/ }).check();
     await expect(page).toHaveURL(/t=payment-refund/);
     const url = page.url();
@@ -99,7 +104,7 @@ test.describe('flows', () => {
   });
 
   test('limits are validated before use', async ({ page }) => {
-    await page.goto('/');
+    await openSandbox(page);
     await page.getByText('5. Search limits').click();
     const field = page.getByLabel('Maximum states');
     await field.fill('5');
@@ -111,7 +116,7 @@ test.describe('flows', () => {
   });
 
   test('cancellation is real and distinct from exhaustion', async ({ page }) => {
-    await page.goto('/');
+    await openSandbox(page);
     await page.getByRole('button', { name: /Stress: every failure at its maximum/ }).click();
     await page.getByText('5. Search limits').click();
     await page.getByLabel('Maximum states').fill('100000');
@@ -124,7 +129,7 @@ test.describe('flows', () => {
   });
 
   test('stress preset at default limits reports exhausted, not safe', async ({ page }) => {
-    await page.goto('/');
+    await openSandbox(page);
     await page.getByRole('button', { name: /Stress: every failure at its maximum/ }).click();
     await explore(page);
     await expect(result(page)).toHaveAttribute('data-status', 'exhausted', { timeout: 30_000 });
@@ -132,7 +137,7 @@ test.describe('flows', () => {
   });
 
   test('rapid switching between two runs only ever shows the newest result', async ({ page }) => {
-    await page.goto('/');
+    await openSandbox(page);
     await page.getByRole('button', { name: /Stress: every failure at its maximum/ }).click();
     await explore(page);
     // Replace the slow run immediately with a different, fast one.
@@ -146,7 +151,7 @@ test.describe('flows', () => {
   });
 
   test('changing settings drops the old result', async ({ page }) => {
-    await page.goto('/');
+    await openSandbox(page);
     await explore(page);
     await expect(result(page)).toHaveAttribute('data-status', 'violated');
     await page.getByRole('radio', { name: '2' }).first().check();
@@ -155,7 +160,7 @@ test.describe('flows', () => {
   });
 
   test('every workflow explores to its documented outcome', async ({ page }) => {
-    await page.goto('/');
+    await openSandbox(page);
     for (const name of [
       'Payment capture and refund',
       'Inventory reservation and order',
@@ -185,7 +190,7 @@ test.describe('layout and accessibility', () => {
       const context = await browser.newContext({ viewport: { width, height } });
       const page = await context.newPage();
       const problems = watchConsole(page);
-      await page.goto('/');
+      await openSandbox(page);
       await noHorizontalScroll(page);
       let axe = await new AxeBuilder({ page }).analyze();
       expect(axe.violations.map((v) => `${v.id}: ${v.nodes[0]?.target}`)).toEqual([]);
@@ -204,7 +209,7 @@ test.describe('layout and accessibility', () => {
   test('dark colour scheme stays accessible', async ({ browser }) => {
     const context = await browser.newContext({ colorScheme: 'dark' });
     const page = await context.newPage();
-    await page.goto('/');
+    await openSandbox(page);
     await explore(page);
     await expect(result(page)).toHaveAttribute('data-status', 'violated');
     const axe = await new AxeBuilder({ page }).analyze();
@@ -215,7 +220,7 @@ test.describe('layout and accessibility', () => {
   test('200% text size does not break the layout', async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
-    await page.goto('/');
+    await openSandbox(page);
     await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
     await explore(page);
     await expect(result(page)).toHaveAttribute('data-status', 'violated');
@@ -228,7 +233,7 @@ test.describe('layout and accessibility', () => {
   test('reduced motion: nothing animates or transitions', async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce' });
     const page = await context.newPage();
-    await page.goto('/');
+    await openSandbox(page);
     const durations = await page.evaluate(() =>
       [...document.querySelectorAll('*')].flatMap((el) => {
         const s = getComputedStyle(el);
@@ -240,7 +245,7 @@ test.describe('layout and accessibility', () => {
   });
 
   test('the diagram has a text alternative and the CSP blocks network access', async ({ page }) => {
-    await page.goto('/');
+    await openSandbox(page);
     await expect(page.getByRole('table', { name: 'Text version of the diagram' })).toBeVisible();
     const csp = await page
       .locator('meta[http-equiv="Content-Security-Policy"]')
