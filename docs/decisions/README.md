@@ -9,14 +9,18 @@ Record decisions that constrain future work or change workflow, failure, invaria
 - Date: YYYY-MM-DD
 
 ## Context
+
 Relevant facts, constraints, and evidence.
 
 ## Decision
+
 The chosen direction.
 
 ## Consequences
+
 Benefits, costs, risks, and follow-up work.
 
 ## Alternatives considered
+
 Credible alternatives and why they were not selected.
 ```

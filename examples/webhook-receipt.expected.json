@@ -1,0 +1,147 @@
+{
+  "engineVersion": "1.0.0",
+  "templateId": "webhook-receipt",
+  "examples": [
+    {
+      "presetId": "stale-event-overwrites",
+      "title": "Events arrive out of order",
+      "invariantId": "newest-event-wins",
+      "status": "violated",
+      "request": {
+        "version": 1,
+        "templateId": "webhook-receipt",
+        "invariantId": "newest-event-wins",
+        "design": {
+          "ordering": "last-write-wins",
+          "dedupe": "off"
+        },
+        "faults": {
+          "duplicate": 0,
+          "lostResponse": 0,
+          "delay": false,
+          "reorder": true,
+          "concurrent": false,
+          "crash": 0,
+          "retry": 0,
+          "lateRetry": 0
+        },
+        "limits": {
+          "maxDepth": 32,
+          "maxStates": 30000,
+          "maxBranching": 32
+        }
+      },
+      "statesDiscovered": 13,
+      "limitsHit": [],
+      "shortest": 4,
+      "violation": "The subscription shows event #1 (active) although event #2 was already received.",
+      "steps": [
+        {
+          "id": "send:event-1",
+          "actor": "Provider (activated)",
+          "label": "Provider (activated) sends the activated event request"
+        },
+        {
+          "id": "send:event-2",
+          "actor": "Provider (cancelled)",
+          "label": "Provider (cancelled) sends the cancelled event request"
+        },
+        {
+          "id": "deliver:1",
+          "actor": "Network",
+          "label": "Service receives Provider (cancelled)'s cancelled event request #1"
+        },
+        {
+          "id": "deliver:0",
+          "actor": "Network",
+          "label": "Service receives Provider (activated)'s activated event request #1"
+        }
+      ]
+    },
+    {
+      "presetId": "duplicate-event-double-effect",
+      "title": "Duplicate delivery",
+      "invariantId": "once-per-event",
+      "status": "violated",
+      "request": {
+        "version": 1,
+        "templateId": "webhook-receipt",
+        "invariantId": "once-per-event",
+        "design": {
+          "ordering": "ignore-older",
+          "dedupe": "off"
+        },
+        "faults": {
+          "duplicate": 1,
+          "lostResponse": 0,
+          "delay": false,
+          "reorder": false,
+          "concurrent": false,
+          "crash": 0,
+          "retry": 0,
+          "lateRetry": 0
+        },
+        "limits": {
+          "maxDepth": 32,
+          "maxStates": 30000,
+          "maxBranching": 32
+        }
+      },
+      "statesDiscovered": 15,
+      "limitsHit": [],
+      "shortest": 3,
+      "violation": "The side effect of event \"evt-1\" ran 2 times.",
+      "steps": [
+        {
+          "id": "send:event-1",
+          "actor": "Provider (activated)",
+          "label": "Provider (activated) sends the activated event request"
+        },
+        {
+          "id": "deliver-dup:0",
+          "actor": "Network",
+          "label": "Network delivers Provider (activated)'s activated event request #1 and keeps a copy",
+          "fault": "duplicate"
+        },
+        {
+          "id": "deliver:0",
+          "actor": "Network",
+          "label": "Service receives Provider (activated)'s activated event request #1"
+        }
+      ]
+    },
+    {
+      "presetId": "guarded-safe",
+      "title": "Sequence check and event ids, broad failures",
+      "invariantId": "newest-event-wins",
+      "status": "bounded-safe",
+      "request": {
+        "version": 1,
+        "templateId": "webhook-receipt",
+        "invariantId": "newest-event-wins",
+        "design": {
+          "ordering": "ignore-older",
+          "dedupe": "by-event-id"
+        },
+        "faults": {
+          "duplicate": 1,
+          "lostResponse": 1,
+          "delay": false,
+          "reorder": true,
+          "concurrent": true,
+          "crash": 1,
+          "retry": 1,
+          "lateRetry": 1
+        },
+        "limits": {
+          "maxDepth": 40,
+          "maxStates": 50000,
+          "maxBranching": 32
+        }
+      },
+      "statesDiscovered": 39489,
+      "limitsHit": [],
+      "complete": true
+    }
+  ]
+}

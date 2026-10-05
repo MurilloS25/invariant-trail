@@ -1,0 +1,169 @@
+{
+  "engineVersion": "1.0.0",
+  "templateId": "inventory-order",
+  "examples": [
+    {
+      "presetId": "two-buyers-one-unit",
+      "title": "Two buyers, one unit",
+      "invariantId": "no-oversell",
+      "status": "violated",
+      "request": {
+        "version": 1,
+        "templateId": "inventory-order",
+        "invariantId": "no-oversell",
+        "design": {
+          "writes": "check-then-decrement"
+        },
+        "faults": {
+          "duplicate": 0,
+          "lostResponse": 0,
+          "delay": false,
+          "reorder": false,
+          "concurrent": true,
+          "crash": 0,
+          "retry": 0,
+          "lateRetry": 0
+        },
+        "limits": {
+          "maxDepth": 32,
+          "maxStates": 30000,
+          "maxBranching": 32
+        }
+      },
+      "statesDiscovered": 44,
+      "limitsHit": [],
+      "shortest": 8,
+      "violation": "2 units were promised although only 1 existed.",
+      "steps": [
+        {
+          "id": "send:buyer-a",
+          "actor": "Buyer A",
+          "label": "Buyer A sends the order request"
+        },
+        {
+          "id": "send:buyer-b",
+          "actor": "Buyer B",
+          "label": "Buyer B sends the order request"
+        },
+        {
+          "id": "deliver:0",
+          "actor": "Network",
+          "label": "Service receives Buyer A's order request #1"
+        },
+        {
+          "id": "deliver:0",
+          "actor": "Network",
+          "label": "Service receives Buyer B's order request #1"
+        },
+        {
+          "id": "step:0",
+          "actor": "Service",
+          "label": "Service step \"Read stock\" for Buyer A's request #1"
+        },
+        {
+          "id": "step:1",
+          "actor": "Service",
+          "label": "Service step \"Read stock\" for Buyer B's request #1"
+        },
+        {
+          "id": "step:0",
+          "actor": "Service",
+          "label": "Service step \"Decrease stock if the read showed some\" for Buyer A's request #1"
+        },
+        {
+          "id": "step:1",
+          "actor": "Service",
+          "label": "Service step \"Decrease stock if the read showed some\" for Buyer B's request #1"
+        }
+      ]
+    },
+    {
+      "presetId": "crash-leaks-reservation",
+      "title": "Crash between subtract and order",
+      "invariantId": "no-leaked-unit",
+      "status": "violated",
+      "request": {
+        "version": 1,
+        "templateId": "inventory-order",
+        "invariantId": "no-leaked-unit",
+        "design": {
+          "writes": "conditional-decrement"
+        },
+        "faults": {
+          "duplicate": 0,
+          "lostResponse": 0,
+          "delay": false,
+          "reorder": false,
+          "concurrent": false,
+          "crash": 1,
+          "retry": 0,
+          "lateRetry": 0
+        },
+        "limits": {
+          "maxDepth": 32,
+          "maxStates": 30000,
+          "maxBranching": 32
+        }
+      },
+      "statesDiscovered": 14,
+      "limitsHit": [],
+      "shortest": 4,
+      "violation": "A unit left stock but has no order and nothing is working on it.",
+      "steps": [
+        {
+          "id": "send:buyer-a",
+          "actor": "Buyer A",
+          "label": "Buyer A sends the order request"
+        },
+        {
+          "id": "deliver:0",
+          "actor": "Network",
+          "label": "Service receives Buyer A's order request #1"
+        },
+        {
+          "id": "step:0",
+          "actor": "Service",
+          "label": "Service step \"Take a unit if available\" for Buyer A's request #1"
+        },
+        {
+          "id": "crash",
+          "actor": "Service",
+          "label": "Service crashes between two writes",
+          "fault": "crash"
+        }
+      ]
+    },
+    {
+      "presetId": "transaction-safe",
+      "title": "One transaction, broad failures",
+      "invariantId": "no-oversell",
+      "status": "bounded-safe",
+      "request": {
+        "version": 1,
+        "templateId": "inventory-order",
+        "invariantId": "no-oversell",
+        "design": {
+          "writes": "transactional"
+        },
+        "faults": {
+          "duplicate": 1,
+          "lostResponse": 1,
+          "delay": false,
+          "reorder": true,
+          "concurrent": true,
+          "crash": 1,
+          "retry": 1,
+          "lateRetry": 1
+        },
+        "limits": {
+          "maxDepth": 40,
+          "maxStates": 50000,
+          "maxBranching": 32
+        }
+      },
+      "statesDiscovered": 3033,
+      "limitsHit": [],
+      "complete": true
+    }
+  ]
+}

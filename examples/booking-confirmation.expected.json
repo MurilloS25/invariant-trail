@@ -1,0 +1,251 @@
+{
+  "engineVersion": "1.0.0",
+  "templateId": "booking-confirmation",
+  "examples": [
+    {
+      "presetId": "double-confirmation",
+      "title": "Duplicate request",
+      "invariantId": "single-confirmation",
+      "status": "violated",
+      "request": {
+        "version": 1,
+        "templateId": "booking-confirmation",
+        "invariantId": "single-confirmation",
+        "design": {
+          "guard": "none"
+        },
+        "faults": {
+          "duplicate": 1,
+          "lostResponse": 0,
+          "delay": false,
+          "reorder": false,
+          "concurrent": false,
+          "crash": 0,
+          "retry": 0,
+          "lateRetry": 0
+        },
+        "limits": {
+          "maxDepth": 32,
+          "maxStates": 30000,
+          "maxBranching": 32
+        }
+      },
+      "statesDiscovered": 15,
+      "limitsHit": [],
+      "shortest": 3,
+      "violation": "The guest received 2 confirmation emails for one booking.",
+      "steps": [
+        {
+          "id": "send:confirm",
+          "actor": "Guest (confirm)",
+          "label": "Guest (confirm) sends the confirm request"
+        },
+        {
+          "id": "deliver-dup:0",
+          "actor": "Network",
+          "label": "Network delivers Guest (confirm)'s confirm request #1 and keeps a copy",
+          "fault": "duplicate"
+        },
+        {
+          "id": "deliver:0",
+          "actor": "Network",
+          "label": "Service receives Guest (confirm)'s confirm request #1"
+        }
+      ]
+    },
+    {
+      "presetId": "retry-after-lost-response",
+      "title": "Retry after a lost answer",
+      "invariantId": "single-confirmation",
+      "status": "violated",
+      "request": {
+        "version": 1,
+        "templateId": "booking-confirmation",
+        "invariantId": "single-confirmation",
+        "design": {
+          "guard": "none"
+        },
+        "faults": {
+          "duplicate": 0,
+          "lostResponse": 1,
+          "delay": false,
+          "reorder": false,
+          "concurrent": false,
+          "crash": 0,
+          "retry": 1,
+          "lateRetry": 0
+        },
+        "limits": {
+          "maxDepth": 32,
+          "maxStates": 30000,
+          "maxBranching": 32
+        }
+      },
+      "statesDiscovered": 33,
+      "limitsHit": [],
+      "shortest": 5,
+      "violation": "The guest received 2 confirmation emails for one booking.",
+      "steps": [
+        {
+          "id": "send:confirm",
+          "actor": "Guest (confirm)",
+          "label": "Guest (confirm) sends the confirm request"
+        },
+        {
+          "id": "deliver:0",
+          "actor": "Network",
+          "label": "Service receives Guest (confirm)'s confirm request #1"
+        },
+        {
+          "id": "drop:0",
+          "actor": "Network",
+          "label": "Network loses the answer \"confirmed\" for Guest (confirm)",
+          "fault": "lostResponse"
+        },
+        {
+          "id": "retry:confirm",
+          "actor": "Guest (confirm)",
+          "label": "Guest (confirm) times out and retries (request #2)"
+        },
+        {
+          "id": "deliver:0",
+          "actor": "Network",
+          "label": "Service receives Guest (confirm)'s confirm request #2"
+        }
+      ]
+    },
+    {
+      "presetId": "stale-read-race",
+      "title": "Cancel slips in between read and write",
+      "invariantId": "no-confirm-after-cancel",
+      "status": "violated",
+      "request": {
+        "version": 1,
+        "templateId": "booking-confirmation",
+        "invariantId": "no-confirm-after-cancel",
+        "design": {
+          "guard": "check-then-write"
+        },
+        "faults": {
+          "duplicate": 0,
+          "lostResponse": 0,
+          "delay": false,
+          "reorder": false,
+          "concurrent": true,
+          "crash": 0,
+          "retry": 0,
+          "lateRetry": 0
+        },
+        "limits": {
+          "maxDepth": 32,
+          "maxStates": 30000,
+          "maxBranching": 32
+        }
+      },
+      "statesDiscovered": 32,
+      "limitsHit": [],
+      "shortest": 7,
+      "violation": "The guest cancelled the booking, yet it is confirmed again.",
+      "steps": [
+        {
+          "id": "send:confirm",
+          "actor": "Guest (confirm)",
+          "label": "Guest (confirm) sends the confirm request"
+        },
+        {
+          "id": "send:cancel",
+          "actor": "Guest (cancel)",
+          "label": "Guest (cancel) sends the cancel request"
+        },
+        {
+          "id": "deliver:0",
+          "actor": "Network",
+          "label": "Service receives Guest (confirm)'s confirm request #1"
+        },
+        {
+          "id": "deliver:0",
+          "actor": "Network",
+          "label": "Service receives Guest (cancel)'s cancel request #1"
+        },
+        {
+          "id": "step:1",
+          "actor": "Service",
+          "label": "Service step \"Read booking status\" for Guest (confirm)'s request #1"
+        },
+        {
+          "id": "step:0",
+          "actor": "Service",
+          "label": "Service step \"Cancel the booking\" for Guest (cancel)'s request #1"
+        },
+        {
+          "id": "step:0",
+          "actor": "Service",
+          "label": "Service step \"Mark confirmed if it was pending\" for Guest (confirm)'s request #1"
+        }
+      ]
+    },
+    {
+      "presetId": "conditional-update-safe",
+      "title": "One conditional update, broad failures",
+      "invariantId": "single-confirmation",
+      "status": "bounded-safe",
+      "request": {
+        "version": 1,
+        "templateId": "booking-confirmation",
+        "invariantId": "single-confirmation",
+        "design": {
+          "guard": "conditional-write"
+        },
+        "faults": {
+          "duplicate": 1,
+          "lostResponse": 1,
+          "delay": false,
+          "reorder": true,
+          "concurrent": true,
+          "crash": 1,
+          "retry": 1,
+          "lateRetry": 1
+        },
+        "limits": {
+          "maxDepth": 40,
+          "maxStates": 50000,
+          "maxBranching": 32
+        }
+      },
+      "statesDiscovered": 9618,
+      "limitsHit": [],
+      "complete": true
+    },
+    {
+      "presetId": "everything-at-once",
+      "title": "Stress: every failure at its maximum",
+      "invariantId": "single-confirmation",
+      "status": "exhausted",
+      "request": {
+        "version": 1,
+        "templateId": "booking-confirmation",
+        "invariantId": "single-confirmation",
+        "design": {
+          "guard": "conditional-write"
+        },
+        "faults": {
+          "duplicate": 2,
+          "lostResponse": 2,
+          "delay": true,
+          "reorder": true,
+          "concurrent": true,
+          "crash": 1,
+          "retry": 2,
+          "lateRetry": 1
+        },
+        "limits": {
+          "maxDepth": 32,
+          "maxStates": 30000,
+          "maxBranching": 32
+        }
+      },
+      "statesDiscovered": 30000,
+      "limitsHit": []
+    }
+  ]
+}

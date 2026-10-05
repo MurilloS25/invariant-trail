@@ -1,0 +1,205 @@
+{
+  "engineVersion": "1.0.0",
+  "templateId": "payment-refund",
+  "examples": [
+    {
+      "presetId": "double-refund",
+      "title": "Duplicate refund, processed concurrently",
+      "invariantId": "refund-within-charged",
+      "status": "violated",
+      "request": {
+        "version": 1,
+        "templateId": "payment-refund",
+        "invariantId": "refund-within-charged",
+        "design": {
+          "idempotency": "off"
+        },
+        "faults": {
+          "duplicate": 1,
+          "lostResponse": 0,
+          "delay": false,
+          "reorder": false,
+          "concurrent": true,
+          "crash": 0,
+          "retry": 0,
+          "lateRetry": 0
+        },
+        "limits": {
+          "maxDepth": 32,
+          "maxStates": 30000,
+          "maxBranching": 32
+        }
+      },
+      "statesDiscovered": 56,
+      "limitsHit": [],
+      "shortest": 12,
+      "violation": "80 was refunded although only 40 was charged.",
+      "steps": [
+        {
+          "id": "send:capture",
+          "actor": "Capture request",
+          "label": "Capture request sends the capture request"
+        },
+        {
+          "id": "deliver:0",
+          "actor": "Network",
+          "label": "Service receives Capture request's capture request #1"
+        },
+        {
+          "id": "step:0",
+          "actor": "Service",
+          "label": "Service step \"Charge the card at the processor\" for Capture request's request #1"
+        },
+        {
+          "id": "step:0",
+          "actor": "Service",
+          "label": "Service step \"Record the capture in the ledger\" for Capture request's request #1"
+        },
+        {
+          "id": "receive:0",
+          "actor": "Network",
+          "label": "Capture request receives the answer \"captured\""
+        },
+        {
+          "id": "send:refund",
+          "actor": "Refund request",
+          "label": "Refund request sends the refund request"
+        },
+        {
+          "id": "deliver-dup:0",
+          "actor": "Network",
+          "label": "Network delivers Refund request's refund request #1 and keeps a copy",
+          "fault": "duplicate"
+        },
+        {
+          "id": "deliver:0",
+          "actor": "Network",
+          "label": "Service receives Refund request's refund request #1"
+        },
+        {
+          "id": "step:0",
+          "actor": "Service",
+          "label": "Service step \"Check the payment was captured\" for Refund request's request #1"
+        },
+        {
+          "id": "step:0",
+          "actor": "Service",
+          "label": "Service step \"Refund at the processor\" for Refund request's request #1"
+        },
+        {
+          "id": "step:1",
+          "actor": "Service",
+          "label": "Service step \"Check the payment was captured\" for Refund request's request #1"
+        },
+        {
+          "id": "step:0",
+          "actor": "Service",
+          "label": "Service step \"Refund at the processor\" for Refund request's request #1"
+        }
+      ]
+    },
+    {
+      "presetId": "charged-twice-after-crash",
+      "title": "Crash after charging, then a retry",
+      "invariantId": "no-double-charge",
+      "status": "violated",
+      "request": {
+        "version": 1,
+        "templateId": "payment-refund",
+        "invariantId": "no-double-charge",
+        "design": {
+          "idempotency": "off"
+        },
+        "faults": {
+          "duplicate": 0,
+          "lostResponse": 0,
+          "delay": false,
+          "reorder": false,
+          "concurrent": false,
+          "crash": 1,
+          "retry": 1,
+          "lateRetry": 0
+        },
+        "limits": {
+          "maxDepth": 32,
+          "maxStates": 30000,
+          "maxBranching": 32
+        }
+      },
+      "statesDiscovered": 13,
+      "limitsHit": [],
+      "shortest": 7,
+      "violation": "The customer was charged 80 for an order of 40.",
+      "steps": [
+        {
+          "id": "send:capture",
+          "actor": "Capture request",
+          "label": "Capture request sends the capture request"
+        },
+        {
+          "id": "deliver:0",
+          "actor": "Network",
+          "label": "Service receives Capture request's capture request #1"
+        },
+        {
+          "id": "step:0",
+          "actor": "Service",
+          "label": "Service step \"Charge the card at the processor\" for Capture request's request #1"
+        },
+        {
+          "id": "crash",
+          "actor": "Service",
+          "label": "Service crashes between two writes",
+          "fault": "crash"
+        },
+        {
+          "id": "retry:capture",
+          "actor": "Capture request",
+          "label": "Capture request times out and retries (request #2)"
+        },
+        {
+          "id": "deliver:0",
+          "actor": "Network",
+          "label": "Service receives Capture request's capture request #2"
+        },
+        {
+          "id": "step:0",
+          "actor": "Service",
+          "label": "Service step \"Charge the card at the processor\" for Capture request's request #2"
+        }
+      ]
+    },
+    {
+      "presetId": "idempotent-safe",
+      "title": "Idempotency keys, broad failures",
+      "invariantId": "refund-within-charged",
+      "status": "bounded-safe",
+      "request": {
+        "version": 1,
+        "templateId": "payment-refund",
+        "invariantId": "refund-within-charged",
+        "design": {
+          "idempotency": "on"
+        },
+        "faults": {
+          "duplicate": 1,
+          "lostResponse": 1,
+          "delay": false,
+          "reorder": true,
+          "concurrent": true,
+          "crash": 1,
+          "retry": 1,
+          "lateRetry": 1
+        },
+        "limits": {
+          "maxDepth": 40,
+          "maxStates": 50000,
+          "maxBranching": 32
+        }
+      },
+      "statesDiscovered": 4823,
+      "limitsHit": [],
+      "complete": true
+    }
+  ]
+}

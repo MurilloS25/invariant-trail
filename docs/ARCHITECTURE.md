@@ -6,7 +6,7 @@ Invariant Trail is a local-first visual failure simulator for finite, stateful w
 
 It is not a workflow orchestrator, distributed-systems model checker, arbitrary-code sandbox, production monitor, or proof of correctness for unbounded systems.
 
-## Proposed components
+## Components (implemented; see the plan and ADRs 0001-0003)
 
 1. **Visual workspace** — template selection, graph and state inspection, invariant/failure controls, limits, progress, and results.
 2. **Contracts** — versioned definitions for state, action, transition, invariant, failure model, search bounds, outcome, and trace step.
@@ -68,3 +68,10 @@ Load one booking template, display its workflow, select a duplicate-confirmation
 - Canonical-state representation and safeguards against accidental omission of future-relevant metadata.
 - Practical default search limits for mobile and desktop devices.
 - Whether optional JSON/YAML import/export earns its security and maintenance cost after the built-in experience is complete.
+
+## Learn, Sandbox and diagram layout (round 2)
+
+- `apps/web` has one shell with two tabs. **Learn** (default) renders typed lessons from `apps/web/src/lib/lessons.ts`; each lesson names an allowlisted workflow, rule and design and runs through the same validated request, worker and controller as the Sandbox. Lessons are data, not code, and add no engine capability.
+- **Sandbox** keeps every control. `?t=...` links open it; `?lesson=<id>` opens a lesson; `#learn` and `#sandbox` select a tab. Unknown lesson ids fall back to the first lesson.
+- Lifecycle diagrams no longer carry pixel coordinates. A template gives a grid cell per node for wide and narrow containers; `packages/engine/src/diagram.ts` computes pixels and places each label where it overlaps no node, label or line. Narrow containers get numbered markers that match a numbered table. `layoutProblems` verifies the geometry in unit tests, and the browser tests re-check real rendered boxes.
+- No new network, storage or server boundary was introduced.
