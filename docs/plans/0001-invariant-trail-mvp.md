@@ -1,6 +1,6 @@
 # Plan 0001: Invariant Trail MVP
 
-- Status: implemented on `feature/invariant-trail-mvp`; outcome and follow-ups below
+- Status: accepted (implemented on `feature/invariant-trail-mvp`); outcome, follow-ups and acceptance record below
 - Canonical inputs: `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/HARNESS.md`
 - Related decisions: ADR 0001 (exploration outcomes and state identity), ADR 0002 (protocol kit and failure semantics), ADR 0003 (static Next.js app and Web Worker boundary)
 
@@ -144,3 +144,9 @@ Delivered: contracts, engine, kit, four templates with golden examples, static a
 ## Round 2: educational positioning (Learn and Sandbox)
 
 Goal: make the tool understandable to students and junior developers without removing any engine capability. Delivered: Learn (default) with four guided lessons, a Sandbox tab keeping every control (advanced controls and limits collapsed), an educational landing page, sticky settings column on tall desktop viewports, a geometric diagram layout (no label or line overlaps, numbered narrow layout), SHA-pinned CI actions. Engine semantics, contracts and goldens are unchanged. Reviews (correctness, security/privacy, educational UX and accessibility) found no P0; the P1/P2 findings were fixed: duplicate element ids across the two always-mounted panels, replay buttons stealing focus, silent step changes for screen readers, dead hero anchors, false prediction feedback after cancelled/exhausted runs, overclaiming lesson text (outbox, transaction, rule wording), diagram flicker, layout overflow of the text table at 200% text. Deferred P3 items are listed in docs/EDUCATION.md.
+
+## Manual acceptance record
+
+After round 2, a person ran the production build locally in a normal browser and approved it. They exercised the Learn mode and the Sandbox, the page layout and the diagrams, and judged the educational presentation, the guided lessons and the diagrams to work correctly. This was a manual, human check; it is separate from, and did not replace, the automated unit, component and browser tests listed above. Native browser zoom was offered for that session as a manual check, and this record does not claim a result for it beyond the overall approval.
+
+Status: accepted.
