@@ -1,10 +1,19 @@
 # Invariant Trail
 
-Visual failure simulator for stateful workflows. Invariant Trail explores retries, duplicates, crashes, delays, and concurrency to find the shortest execution path that breaks a safety rule, then replays it step by step.
+An interactive learning tool for students and junior developers who want to understand idempotency, retries, concurrency and distributed-system failures through visual, step-by-step simulations.
+
+**Learn why reliable systems fail, and how to fix them.**
+
+Invariant Trail simulates small, modelled scenarios. It explores retries, duplicates, crashes, delays and concurrency to find the shortest sequence of events that breaks a safety rule, then replays it step by step. It never runs or touches a real system.
 
 It runs entirely in the browser. There is no server, account, database, LLM, telemetry, or paid service, and nothing a visitor types is ever executed.
 
-## What you can do
+## Two ways to use it
+
+- **Learn** (default): four guided lessons. Each one states what must never happen, what could go wrong, asks you to predict, runs the simulation, replays the shortest example that breaks the rule, explains why it happened and which idea it teaches, and lists how real systems usually prevent it. You can then run the same failures against a protected design. See [docs/EDUCATION.md](docs/EDUCATION.md).
+- **Sandbox**: every technical control. Choose the workflow, the safety rule, how the workflow is built, the things that can go wrong, and the search limits. Presets, shareable URLs, progress and cancellation all live here.
+
+## What you can do in the Sandbox
 
 1. Choose a built-in workflow: booking confirmation, payment capture and refund, inventory reservation and order, or webhook receipt.
 2. See its lifecycle as a diagram, with an equivalent text table.
@@ -54,6 +63,10 @@ npm run verify         # format, lint, typecheck, test, build
 - "No violation found" is bounded. It covers the model, the failure settings, the single selected rule, and the limits. It is never a proof about a real system. If a limit hid states, the result says which.
 - The workflows are small deliberate models, not your production code. Only safety rules are checked, not liveness: a crash can lose work without breaking any safety rule.
 - Duplicates apply to requests (not answers). Budgets are global, not per client. Service downtime is not modelled (it restarts immediately). Slow answers are off in the safe presets because enabling them with every other failure exceeds the state budget.
+
+## Native zoom
+
+The automated 200% check forces `font-size: 200%` on the page. That is not the same as the browser's own zoom (Ctrl and +), which also changes the viewport width in CSS pixels and triggers different media queries. Please test native zoom (200% and 400%) by hand before relying on it.
 
 ## Why no paid services
 

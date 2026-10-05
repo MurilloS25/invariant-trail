@@ -1,7 +1,7 @@
 'use client';
 
 import { layoutDiagram, type Lifecycle } from '@invariant-trail/engine';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
   title: string;
@@ -23,14 +23,17 @@ export function LifecycleDiagram({ title, lifecycle, current }: Props) {
   const wideLayout = useMemo(() => layoutDiagram(lifecycle, 'wide'), [lifecycle]);
   const narrowLayout = useMemo(() => layoutDiagram(lifecycle, 'narrow'), [lifecycle]);
 
-  useEffect(() => {
+  // Measured before paint so a phone never shows a frame of the wide layout. A hidden tab reports
+  // zero width; that is ignored until the tab is shown.
+  useLayoutEffect(() => {
     const node = holder.current;
     if (!node || typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(([entry]) => {
-      if (entry) setAvailable(entry.contentRect.width);
+      if (entry && entry.contentRect.width > 0) setAvailable(entry.contentRect.width);
     });
     observer.observe(node);
-    setAvailable(node.getBoundingClientRect().width);
+    const initial = node.getBoundingClientRect().width;
+    if (initial > 0) setAvailable(initial);
     return () => observer.disconnect();
   }, []);
 

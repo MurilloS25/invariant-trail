@@ -28,6 +28,8 @@ export interface LaidEdge {
 }
 
 export interface DiagramLayout {
+  /** Labels that had to use a position that is not collision-free. Always 0 for the built-in workflows. */
+  fallbacks: number;
   orientation: Orientation;
   width: number;
   height: number;
@@ -179,6 +181,7 @@ export function layoutDiagram(lifecycle: Lifecycle, orientation: Orientation): D
   });
 
   const placed: Rect[] = [];
+  let fallbacks = 0;
   for (const edge of edges) {
     const size = wide ? { w: labelWidth(edge.label), h: 26 } : { w: 26, h: 26 };
     const options = candidates(edge, size, orientation);
@@ -192,7 +195,9 @@ export function layoutDiagram(lifecycle: Lifecycle, orientation: Orientation): D
         ? false
         : true;
     };
-    const chosen = options.find((o) => ok(o.rect)) ?? options[0];
+    const found = options.find((o) => ok(o.rect));
+    if (!found) fallbacks++;
+    const chosen = found ?? options[0];
     const rect = (chosen as Placement).rect;
     edge.badge = { ...rect, text: edge.badge.text };
     placed.push(rect);
@@ -205,6 +210,7 @@ export function layoutDiagram(lifecycle: Lifecycle, orientation: Orientation): D
   const maxY = Math.max(...boxes.map((r) => r.y + r.h)) + PAD;
   const shift = (r: Rect): Rect => ({ ...r, x: r.x - minX, y: r.y - minY });
   return {
+    fallbacks,
     orientation,
     width: Math.ceil(maxX - minX),
     height: Math.ceil(maxY - minY),
@@ -218,6 +224,29 @@ export function layoutDiagram(lifecycle: Lifecycle, orientation: Orientation): D
       badge: { ...e.badge, ...shift(e.badge) },
     })),
   };
+}
+
+function orient(a: Point, b: Point, c: Point): number {
+  return Math.sign((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]));
+}
+
+/** True when two segments properly cross or run on top of each other (shared end points do not count). */
+export function segmentsConflict(p: [Point, Point], q: [Point, Point]): boolean {
+  const same = (a: Point, b: Point): boolean => Math.hypot(a[0] - b[0], a[1] - b[1]) < 3;
+  const touching = p.some((a) => q.some((b) => same(a, b)));
+  const o1 = orient(p[0], p[1], q[0]);
+  const o2 = orient(p[0], p[1], q[1]);
+  const o3 = orient(q[0], q[1], p[0]);
+  const o4 = orient(q[0], q[1], p[1]);
+  if (o1 === 0 && o2 === 0 && o3 === 0 && o4 === 0) {
+    // Collinear: conflict when the projections overlap by more than a shared end point.
+    const axis = Math.abs(p[1][0] - p[0][0]) >= Math.abs(p[1][1] - p[0][1]) ? 0 : 1;
+    const lo = Math.max(Math.min(p[0][axis], p[1][axis]), Math.min(q[0][axis], q[1][axis]));
+    const hi = Math.min(Math.max(p[0][axis], p[1][axis]), Math.max(q[0][axis], q[1][axis]));
+    return hi - lo > 3;
+  }
+  if (touching) return false;
+  return o1 !== o2 && o3 !== o4;
 }
 
 /** Geometry problems of a layout; empty when nothing overlaps or is crossed. */
@@ -250,7 +279,17 @@ export function layoutProblems(layout: DiagramLayout): string[] {
         problems.push(`label "${edge.label}" is crossed by line ${other.from}->${other.to}`);
       }
     }
-    if (edge.badge.x < 0 || edge.badge.y < 0 || edge.badge.x + edge.badge.w > layout.width) {
+    for (const other of layout.edges) {
+      if (other.index > edge.index && segmentsConflict(edge.points, other.points)) {
+        problems.push(`lines ${edge.from}->${edge.to} and ${other.from}->${other.to} cross`);
+      }
+    }
+    if (
+      edge.badge.x < 0 ||
+      edge.badge.y < 0 ||
+      edge.badge.x + edge.badge.w > layout.width ||
+      edge.badge.y + edge.badge.h > layout.height
+    ) {
       problems.push(`label "${edge.label}" falls outside the diagram`);
     }
   }

@@ -8,7 +8,8 @@ import {
   resolveRequest,
   type ProtocolState,
 } from '@invariant-trail/engine';
-import { useMemo, useRef, type KeyboardEvent } from 'react';
+import { useId, useMemo, useRef, type KeyboardEvent } from 'react';
+import { Heading } from './heading';
 import { FAULT_NAMES } from '../lib/copy';
 import { LifecycleDiagram } from './diagram';
 import { ChangeTable, StateSections } from './state-table';
@@ -18,9 +19,23 @@ interface Props {
   request: ExplorationRequest;
   step: number;
   onStep(step: number): void;
+  /** Heading level of the panel title: 3 in the sandbox, 4 inside a lesson. */
+  headingLevel?: number;
+  /** Lessons explain the result themselves, so the repeated diagram and summary are left out. */
+  compact?: boolean;
 }
 
-export function ReplayPanel({ outcome, request, step, onStep }: Props) {
+export function ReplayPanel({
+  outcome,
+  request,
+  step,
+  onStep,
+  headingLevel = 3,
+  compact = false,
+}: Props) {
+  const uid = useId();
+  const headingId = `${uid}-replay`;
+  const whyId = `${uid}-why`;
   const resolved = useMemo(() => resolveRequest(request), [request]);
   const stoneRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const { counterexample } = outcome;
@@ -76,8 +91,10 @@ export function ReplayPanel({ outcome, request, step, onStep }: Props) {
   const isLast = selected === total;
 
   return (
-    <section className="card replay" aria-labelledby="replay-heading">
-      <h3 id="replay-heading">Shortest example that breaks the rule</h3>
+    <section className="card replay" aria-labelledby={headingId}>
+      <Heading level={headingLevel} id={headingId}>
+        Shortest example that breaks the rule
+      </Heading>
       <p className="help">
         Step through what happened, from the starting state to the broken rule. Use the buttons, or
         the arrow keys while a step is focused.
@@ -137,7 +154,7 @@ export function ReplayPanel({ outcome, request, step, onStep }: Props) {
                       ) : null}
                       {isFinal ? <span className="tag tag-break">Rule broken here</span> : null}
                       {s.contributes && !isFinal ? (
-                        <span className="tag">Changes rule evidence</span>
+                        <span className="tag">Touches what the rule checks</span>
                       ) : null}
                     </span>
                   </span>
@@ -152,27 +169,33 @@ export function ReplayPanel({ outcome, request, step, onStep }: Props) {
             <button
               type="button"
               className="button"
-              onClick={() => go(selected - 1, true)}
+              onClick={() => go(selected - 1)}
               disabled={selected === 0}
             >
               Previous step
             </button>
-            <span className="step-count" aria-live="polite">
+            <span className="step-count">
               {selected === 0 ? 'Start' : `Step ${selected} of ${total}`}
             </span>
             <button
               type="button"
               className="button button-primary"
-              onClick={() => go(selected + 1, true)}
+              onClick={() => go(selected + 1)}
               disabled={selected === total}
             >
               Next step
             </button>
           </div>
 
+          <p className="sr-only" aria-live="polite" aria-atomic="true">
+            {current
+              ? `Step ${selected} of ${total}: ${current.transition.label}. ${current.transition.detail}${isLast ? ` Rule broken: ${invariant.title}.` : ''}`
+              : 'Start: initial state.'}
+          </p>
+
           {current ? (
             <>
-              <h4>{current.transition.label}</h4>
+              <Heading level={headingLevel + 1}>{current.transition.label}</Heading>
               <p className="step-actor">
                 Who: {current.transition.actor}
                 {current.transition.kind === 'fault' && current.transition.fault
@@ -180,12 +203,14 @@ export function ReplayPanel({ outcome, request, step, onStep }: Props) {
                   : ''}
               </p>
               <p>{current.transition.detail}</p>
-              <h5 className="subhead">What changed</h5>
+              <Heading level={headingLevel + 2} className="subhead">
+                What changed
+              </Heading>
               <ChangeTable sections={sections} />
             </>
           ) : (
             <>
-              <h4>Initial state</h4>
+              <Heading level={headingLevel + 1}>Initial state</Heading>
               <p>Nothing has happened yet. Every request is still waiting to be sent.</p>
             </>
           )}
@@ -197,11 +222,13 @@ export function ReplayPanel({ outcome, request, step, onStep }: Props) {
             </div>
           ) : null}
 
-          <LifecycleDiagram
-            title={template.title}
-            lifecycle={template.lifecycle}
-            current={lifecycleNode}
-          />
+          {compact ? null : (
+            <LifecycleDiagram
+              title={template.title}
+              lifecycle={template.lifecycle}
+              current={lifecycleNode}
+            />
+          )}
 
           <details className="full-state">
             <summary>Full state {selected === 0 ? 'at the start' : 'after this step'}</summary>
@@ -210,35 +237,43 @@ export function ReplayPanel({ outcome, request, step, onStep }: Props) {
         </div>
       </div>
 
-      <section className="why" aria-labelledby="why-heading">
-        <h4 id="why-heading">Why the rule broke</h4>
-        <p>
-          <strong>{invariant.title}.</strong> {invariant.why}
-        </p>
-        <p>{counterexample.violation.message}</p>
-        {causes.length > 0 ? (
-          <>
-            <p className="help">These steps changed the data the rule looks at:</p>
-            <ol className="causes">
-              {causes.map((cause) => (
-                <li key={cause.stepIndex}>
-                  <button type="button" className="link-button" onClick={() => go(cause.stepIndex)}>
-                    Step {cause.stepIndex}: {cause.label}
-                  </button>
-                  <ul>
-                    {cause.rows.map((row) => (
-                      <li key={row.label}>
-                        {row.label}: {row.previous !== undefined ? `${row.previous} → ` : ''}
-                        <strong>{row.value}</strong>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ol>
-          </>
-        ) : null}
-      </section>
+      {compact ? null : (
+        <section className="why" aria-labelledby={whyId}>
+          <Heading level={headingLevel + 1} id={whyId}>
+            Why the rule broke
+          </Heading>
+          <p>
+            <strong>{invariant.title}.</strong> {invariant.why}
+          </p>
+          <p>{counterexample.violation.message}</p>
+          {causes.length > 0 ? (
+            <>
+              <p className="help">These steps changed the data the rule looks at:</p>
+              <ol className="causes">
+                {causes.map((cause) => (
+                  <li key={cause.stepIndex}>
+                    <button
+                      type="button"
+                      className="link-button"
+                      onClick={() => go(cause.stepIndex)}
+                    >
+                      Step {cause.stepIndex}: {cause.label}
+                    </button>
+                    <ul>
+                      {cause.rows.map((row) => (
+                        <li key={row.label}>
+                          {row.label}: {row.previous !== undefined ? `${row.previous} → ` : ''}
+                          <strong>{row.value}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ol>
+            </>
+          ) : null}
+        </section>
+      )}
     </section>
   );
 }

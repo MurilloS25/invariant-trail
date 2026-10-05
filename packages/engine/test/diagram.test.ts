@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { labelWidth, layoutDiagram, layoutProblems, TEMPLATES, type Orientation } from '../src';
+import {
+  labelWidth,
+  layoutDiagram,
+  layoutProblems,
+  segmentsConflict,
+  TEMPLATES,
+  type Orientation,
+} from '../src';
 
 describe.each(TEMPLATES.map((t) => [t.id, t] as const))(
   'diagram layout for %s',
@@ -10,6 +17,7 @@ describe.each(TEMPLATES.map((t) => [t.id, t] as const))(
       (orientation) => {
         const layout = layoutDiagram(template.lifecycle, orientation);
         expect(layoutProblems(layout)).toEqual([]);
+        expect(layout.fallbacks).toBe(0);
         expect(layout.nodes).toHaveLength(template.lifecycle.nodes.length);
       },
     );
@@ -38,5 +46,58 @@ describe.each(TEMPLATES.map((t) => [t.id, t] as const))(
 describe('layout helpers', () => {
   it('estimates wider pills for longer labels', () => {
     expect(labelWidth('take from stock')).toBeGreaterThan(labelWidth('cancel'));
+  });
+});
+
+describe('segment conflicts', () => {
+  it('detects crossings and overlaps but not shared end points', () => {
+    expect(
+      segmentsConflict(
+        [
+          [0, 0],
+          [10, 10],
+        ],
+        [
+          [0, 10],
+          [10, 0],
+        ],
+      ),
+    ).toBe(true);
+    expect(
+      segmentsConflict(
+        [
+          [0, 0],
+          [10, 0],
+        ],
+        [
+          [5, 0],
+          [15, 0],
+        ],
+      ),
+    ).toBe(true);
+    expect(
+      segmentsConflict(
+        [
+          [0, 0],
+          [10, 0],
+        ],
+        [
+          [10, 0],
+          [20, 5],
+        ],
+      ),
+    ).toBe(false);
+    expect(
+      segmentsConflict(
+        [
+          [0, 0],
+          [10, 0],
+        ],
+        [
+          [0, 5],
+          [10, 5],
+        ],
+      ),
+    ).toBe(false);
   });
 });

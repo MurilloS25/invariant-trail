@@ -132,6 +132,11 @@ export function Workspace({ runner, syncUrl = true, active = true }: Props) {
       <p className="sr-only" role="status" aria-live="polite">
         {run.phase === 'running' ? 'Exploring' : ''}
       </p>
+      <h3 id="workspace-heading">Sandbox</h3>
+      <p className="sandbox-intro">
+        Every technical control is here: choose the workflow, the safety rule, how it is built, and
+        which things can go wrong, then try every possible order within your limits.
+      </p>
       <div className="workspace-grid">
         <div className="col-setup">
           <SetupPanel
@@ -143,11 +148,6 @@ export function Workspace({ runner, syncUrl = true, active = true }: Props) {
           />
         </div>
         <div className="col-main">
-          <h3 id="workspace-heading">Sandbox</h3>
-          <p className="sandbox-intro">
-            Every technical control is here: choose the workflow, the safety rule, how it is built,
-            and which things can go wrong, then try every possible order within your limits.
-          </p>
           <section className="card about" aria-labelledby="about-heading">
             <h3 id="about-heading">{template.title}</h3>
             <p>{template.story}</p>

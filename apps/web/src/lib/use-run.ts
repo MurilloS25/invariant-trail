@@ -33,12 +33,17 @@ export function useRun(runner?: Runner) {
         ),
       onDone: (id, outcome) =>
         setRun((current) =>
-          current.phase === 'running' && current.runId === id
+          // `idle` is accepted too: a runner that finishes before the running state was set is still current.
+          (current.phase === 'running' && current.runId === id) || current.phase === 'idle'
             ? { phase: 'done', runId: id, outcome, request }
             : current,
         ),
     });
-    setRun({ phase: 'running', runId: runId, stats: { ...EMPTY_STATS } });
+    setRun((current) =>
+      current.phase === 'done' && current.runId === runId
+        ? current
+        : { phase: 'running', runId, stats: { ...EMPTY_STATS } },
+    );
   }, []);
 
   const cancel = useCallback(() => controller.current?.cancel(), []);

@@ -33,7 +33,13 @@ const count = (n: number): string => n.toLocaleString('en-US');
  * Plain-language summary of an outcome. The wording is deliberate: it never says "safe" or
  * "proved", and it always says what the answer covers.
  */
-export function describeOutcome(outcome: ExplorationOutcome): OutcomeCopy {
+export function describeOutcome(
+  outcome: ExplorationOutcome,
+  context: { lesson?: boolean } = {},
+): OutcomeCopy {
+  const raiseLimits = context.lesson
+    ? 'Open the sandbox to look further.'
+    : 'Raise the limits to look further.';
   const explored = count(outcome.stats.statesDiscovered);
   switch (outcome.status) {
     case 'violated': {
@@ -72,7 +78,7 @@ export function describeOutcome(outcome: ExplorationOutcome): OutcomeCopy {
         badge: 'No violation found within limits',
         headline: 'No violation found within these limits',
         paragraphs: [
-          `None of the ${explored} states explored broke the rule, but the ${hidden} hid some states. Raise the limits to look further.`,
+          `None of the ${explored} states explored broke the rule, but the ${hidden} hid some states. ${raiseLimits}`,
           'This is not a proof: a violation may exist beyond the limits.',
         ],
       };
@@ -84,7 +90,9 @@ export function describeOutcome(outcome: ExplorationOutcome): OutcomeCopy {
         headline: 'Search stopped: state budget used up',
         paragraphs: [
           `The search reached its limit of ${count(outcome.limits?.maxStates ?? 0)} states before it could finish, so it concluded nothing about the rule.`,
-          'Raise the state limit, or switch off some failures to shrink the search.',
+          context.lesson
+            ? 'Open the sandbox to raise the state limit or switch off some failures.'
+            : 'Raise the state limit, or switch off some failures to shrink the search.',
         ],
       };
     case 'cancelled':

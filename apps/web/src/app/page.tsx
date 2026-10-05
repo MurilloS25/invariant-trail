@@ -1,4 +1,5 @@
 import { AppShell } from '../components/app-shell';
+import { ModeLink } from '../components/mode-link';
 
 const FLOW = [
   { text: '1 item available', tone: 'start' },
@@ -16,8 +17,8 @@ export default function Page() {
       <header className="site-header">
         <p className="wordmark">Invariant Trail</p>
         <nav aria-label="Page sections">
-          <a href="#learn">Learn</a>
-          <a href="#sandbox">Sandbox</a>
+          <ModeLink mode="learn">Learn</ModeLink>
+          <ModeLink mode="sandbox">Sandbox</ModeLink>
           <a href="#limits-and-honesty">What a result means</a>
         </nav>
       </header>
@@ -31,12 +32,12 @@ export default function Page() {
               step-by-step simulations.
             </p>
             <p className="hero-actions">
-              <a className="button button-primary" href="#learn">
+              <ModeLink mode="learn" className="button button-primary">
                 Start a guided lesson
-              </a>
-              <a className="button" href="#sandbox">
+              </ModeLink>
+              <ModeLink mode="sandbox" className="button">
                 Open the sandbox
-              </a>
+              </ModeLink>
             </p>
             <p className="hero-note">
               Runs in your browser. No account. It simulates small models of systems; it never

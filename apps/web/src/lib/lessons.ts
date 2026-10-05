@@ -64,7 +64,7 @@ export const GLOSSARY = {
       'Saving "I must tell the other system about this" in the same transaction as the change, so the two cannot get out of step.',
   },
   counterexample: {
-    term: 'Counterexample',
+    term: 'Counterexample (shortest example that breaks the rule)',
     definition:
       'A concrete sequence of events that breaks the rule. Here, the shortest one the search found.',
   },
@@ -123,7 +123,7 @@ export const LESSONS: readonly Lesson[] = [
     patterns: [
       {
         name: 'Idempotency key',
-        text: 'The app sends the same key with every attempt. The service remembers keys it has handled and answers a repeat without doing the work again.',
+        text: 'The app sends the same key with every attempt. The service remembers keys it has handled and answers a repeat without doing the work again. The key and the result must be saved together, or a crash between them can bring the bug back.',
       },
       {
         name: 'Conditional update',
@@ -162,8 +162,8 @@ export const LESSONS: readonly Lesson[] = [
         text: 'Send the same key with every attempt. The processor charges once and answers repeats with the first result.',
       },
       {
-        name: 'Transactional outbox',
-        text: 'Record "a charge was requested" in the same transaction as the order, then let a separate step carry it out, so the record and the intent cannot drift apart.',
+        name: 'Record the intent first (transactional outbox)',
+        text: 'Save "a charge was requested" in the same database transaction as the order, then let a separate step carry it out. This keeps your own records in step, but that step can still run twice, so the processor still needs an idempotency key.',
       },
     ],
     protectedDesign: {
@@ -189,13 +189,13 @@ export const LESSONS: readonly Lesson[] = [
     faults: { ...NO_FAULTS, concurrent: true },
     why: [
       'Both requests read "1 left" before either one subtracted.',
-      'Each decided it was safe to buy, and both subtracted, so stock went below zero. A normal test that runs one buyer at a time never sees this order of events.',
+      'Each decided it was safe to buy, and both subtracted, so stock went below zero. A normal test that runs one buyer at a time rarely sees this order of events.',
     ],
     concept: 'race',
     patterns: [
       {
         name: 'Atomic conditional update',
-        text: "Subtract one only if stock is above zero, as a single step. The second buyer's update simply fails.",
+        text: "Subtract one only if stock is above zero, as a single step. The second buyer's update simply fails. In this model the fixed design makes the check and the subtraction one indivisible step; a real database needs the right locking or isolation to give the same effect.",
       },
       {
         name: 'Optimistic concurrency control',
@@ -215,7 +215,7 @@ export const LESSONS: readonly Lesson[] = [
     hook: 'A provider tells you a subscription was activated and then cancelled. You receive them backwards.',
     scenario:
       'A billing provider sends event 1 ("activated") and then event 2 ("cancelled"). Webhooks are delivered at least once and in no promised order.',
-    rule: 'The subscription must always reflect the newest event received.',
+    rule: 'The subscription must always reflect the newest event the provider sent: the one with the highest sequence number, here event 2 (cancelled).',
     invariantId: 'newest-event-wins',
     wrong: [
       'The "cancelled" event arrives first.',
@@ -234,7 +234,7 @@ export const LESSONS: readonly Lesson[] = [
         text: 'Give each event a sequence number or timestamp. Apply an event only if it is newer than what you already stored.',
       },
       {
-        name: 'Deduplication',
+        name: 'Deduplication (also worth knowing; not simulated in the fixed design below)',
         text: 'Remember event ids you have handled, so a repeated delivery does not run its side effect twice.',
       },
     ],
@@ -243,7 +243,7 @@ export const LESSONS: readonly Lesson[] = [
       summary:
         'The receiver now ignores any event that is not newer than the one it already applied.',
     },
-    terms: ['safetyRule', 'dedup', 'versioning', 'counterexample'],
+    terms: ['safetyRule', 'versioning', 'dedup'],
   },
 ];
 

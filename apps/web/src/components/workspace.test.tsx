@@ -36,7 +36,7 @@ describe('Workspace', () => {
     expect(
       await screen.findByRole('heading', { name: 'Rule broken in 5 steps' }),
     ).toBeInTheDocument();
-    expect(screen.getByTestId('replay-check')).toHaveTextContent('Replay check passed');
+    expect(screen.getByTestId('replay-check')).toHaveTextContent('Verified');
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: 'Rule broken in 5 steps' })).toHaveFocus(),
     );

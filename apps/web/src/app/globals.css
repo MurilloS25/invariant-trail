@@ -276,6 +276,8 @@ a {
   .workspace-grid {
     grid-template-columns: minmax(340px, 410px) minmax(0, 1fr);
   }
+}
+@media (min-width: 1000px) and (min-height: 700px) {
   .col-setup {
     position: sticky;
     top: 12px;
@@ -587,6 +589,11 @@ a {
   margin-bottom: 12px;
 }
 
+@media (max-height: 640px) {
+  .actions {
+    position: static !important;
+  }
+}
 .actions {
   position: sticky;
   bottom: 0;
@@ -656,8 +663,7 @@ a {
   fill: var(--pine);
 }
 .diagram-table {
-  table-layout: fixed;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   width: 100%;
   border-collapse: collapse;
   margin: 12px 0 6px;
@@ -667,6 +673,10 @@ a {
   text-align: left;
   font-weight: 700;
   padding-bottom: 4px;
+}
+.diagram-table th:first-child,
+.diagram-table td:first-child {
+  width: 2.6em;
 }
 .diagram-table th,
 .diagram-table td {
@@ -1335,4 +1345,133 @@ button.stone:hover {
   margin: 0;
   color: var(--ink-2);
   font-size: 0.95rem;
+}
+
+/* ---------- Round 2 refinements ---------- */
+.tag,
+.evidence-mark,
+.change-section,
+.stone-index {
+  font-size: 0.875rem;
+}
+.link-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.flow-item + .flow-item::before {
+  content: '↓' / '';
+}
+.flow-break::after {
+  content: '  ✕' / '';
+}
+.marker-break::after {
+  content: '✕' / '';
+}
+.result-details {
+  margin-top: 12px;
+}
+.result-details summary {
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.terms {
+  padding: 0;
+}
+.terms summary {
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 8px clamp(16px, 3vw, 24px);
+  display: flex;
+  align-items: center;
+}
+.terms dl {
+  padding: 0 clamp(16px, 3vw, 24px) 16px;
+}
+@media (max-width: 520px) {
+  .change-table,
+  .change-table tbody,
+  .change-table tr,
+  .change-table th,
+  .change-table td {
+    display: block;
+    width: 100%;
+  }
+  .change-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .change-table tr {
+    border-bottom: 1px solid var(--line);
+    padding: 6px 0;
+  }
+  .change-table th,
+  .change-table td {
+    border: 0;
+    padding: 2px 8px;
+  }
+  .change-table td:nth-of-type(1)::before {
+    content: 'Before: ';
+    font-weight: 700;
+  }
+  .change-table td:nth-of-type(2)::before {
+    content: 'After: ';
+    font-weight: 700;
+  }
+}
+
+.diagram-table {
+  table-layout: fixed;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 520px) {
+  .diagram-table,
+  .diagram-table tbody,
+  .diagram-table tr,
+  .diagram-table td {
+    display: block;
+    width: 100%;
+  }
+  .diagram-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .diagram-table tr {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .diagram-table td {
+    border: 0;
+    padding: 1px 8px;
+    width: 100%;
+  }
+  .diagram-table td:first-child {
+    font-weight: 700;
+    width: 100%;
+  }
+  .diagram-table td:first-child::before {
+    content: 'Step ';
+  }
+  .diagram-table td:nth-of-type(2)::before {
+    content: 'From: ';
+    font-weight: 700;
+  }
+  .diagram-table td:nth-of-type(3)::before {
+    content: 'Event: ';
+    font-weight: 700;
+  }
+  .diagram-table td:nth-of-type(4)::before {
+    content: 'To: ';
+    font-weight: 700;
+  }
 }

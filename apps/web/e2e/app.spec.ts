@@ -35,7 +35,7 @@ test.describe('flows', () => {
     await explore(page);
     await expect(result(page)).toHaveAttribute('data-status', 'violated');
     await expect(page.getByRole('heading', { name: 'Rule broken in 5 steps' })).toBeFocused();
-    await expect(page.getByTestId('replay-check')).toContainText('Replay check passed');
+    await expect(page.getByTestId('replay-check')).toContainText('Verified');
 
     const next = page.getByRole('button', { name: 'Next step' });
     for (let i = 1; i <= 5; i++) {
@@ -173,7 +173,7 @@ test.describe('flows', () => {
         .click();
       await explore(page);
       await expect(result(page)).toHaveAttribute('data-status', 'violated');
-      await expect(page.getByTestId('replay-check')).toContainText('passed');
+      await expect(page.getByTestId('replay-check')).toContainText('Verified');
     }
   });
 });

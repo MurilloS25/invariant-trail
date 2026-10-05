@@ -34,7 +34,9 @@ export function StateSections({ sections }: { sections: DiffSection[] }) {
                           : ''}
                       </span>
                     ) : null}
-                    {row.evidence ? <span className="evidence-mark">rule evidence</span> : null}
+                    {row.evidence ? (
+                      <span className="evidence-mark">the rule checks this</span>
+                    ) : null}
                   </dd>
                 </div>
               ))}
@@ -72,7 +74,7 @@ export function ChangeTable({ sections }: { sections: DiffSection[] }) {
             <th scope="row">
               <span className="change-section">{section}</span>
               {row.label}
-              {row.evidence ? <span className="evidence-mark">rule evidence</span> : null}
+              {row.evidence ? <span className="evidence-mark">the rule checks this</span> : null}
             </th>
             <td>
               {row.change === 'added' ? (

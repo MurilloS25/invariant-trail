@@ -117,7 +117,7 @@ test.describe('Learn mode', () => {
     await expect(page.getByText('common patterns, not guarantees')).toBeVisible();
 
     await page
-      .getByRole('button', { name: /Try the same failures against a protected design/ })
+      .getByRole('button', { name: /Try the same failures against a fixed design/ })
       .click();
     const safe = page.locator('[data-status="bounded-safe"]');
     await expect(safe).toBeVisible();
@@ -139,7 +139,7 @@ test.describe('Learn mode', () => {
       await page.getByRole('radio', { name: title }).check();
       await page.getByRole('button', { name: 'Run the simulation' }).click();
       await expect(page.locator('[data-status="violated"]')).toBeVisible();
-      await page.getByRole('button', { name: /protected design/ }).click();
+      await page.getByRole('button', { name: /fixed design/ }).click();
       await expect(page.locator('[data-status="bounded-safe"]')).toBeVisible();
     }
   });
@@ -234,7 +234,7 @@ test.describe('Sandbox mode', () => {
     await page.goto('/#sandbox');
     const column = page.locator('.col-setup');
     await expect(column).toBeVisible();
-    await page.evaluate(() => document.getElementById('panel-sandbox')?.scrollIntoView());
+    await page.evaluate(() => document.querySelector('.workspace-grid')?.scrollIntoView());
     const position = await column.evaluate((el) => getComputedStyle(el).position);
     expect(position).toBe('sticky');
     const heights = await column.evaluate((el) => ({
@@ -351,7 +351,7 @@ test.describe('layout and accessibility across both modes', () => {
       let axe = await new AxeBuilder({ page }).analyze();
       expect(axe.violations.map((v) => `${v.id}: ${v.nodes[0]?.target}`)).toEqual([]);
       await page.getByRole('button', { name: 'Run the simulation' }).click();
-      await page.getByRole('button', { name: /protected design/ }).click();
+      await page.getByRole('button', { name: /fixed design/ }).click();
       await expect(page.locator('[data-status="bounded-safe"]')).toBeVisible();
       await noHorizontalScroll(page);
       axe = await new AxeBuilder({ page }).analyze();

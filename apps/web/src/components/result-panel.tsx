@@ -1,8 +1,9 @@
 'use client';
 
 import { replayTrace, resolveRequest } from '@invariant-trail/engine';
-import type { Ref } from 'react';
-import { useMemo } from 'react';
+import type { ReactNode, Ref } from 'react';
+import { useId, useMemo } from 'react';
+import { Heading } from './heading';
 import { describeOutcome } from '../lib/copy';
 import type { Config, RunState } from '../lib/workspace-state';
 import { StatusBadge } from './status-badge';
@@ -15,6 +16,10 @@ interface Props {
   headingRef: Ref<HTMLHeadingElement>;
   /** Keeps element ids unique when two results are on the page. */
   idPrefix?: string;
+  /** Heading level: 3 in the sandbox, 4 inside a lesson. */
+  headingLevel?: number;
+  /** Lessons show a one-line summary and fold the counters away. */
+  compact?: boolean;
 }
 
 function ReplayCheck({ run }: { run: Extract<RunState, { phase: 'done' }> }) {
@@ -29,22 +34,48 @@ function ReplayCheck({ run }: { run: Extract<RunState, { phase: 'done' }> }) {
   return (
     <p className="replay-check" data-testid="replay-check">
       {check.ok
-        ? `Replay check passed: running the ${check.steps} recorded ${check.steps === 1 ? 'step' : 'steps'} again from the starting state reproduces every state and the broken rule.`
-        : 'Replay check failed: the recorded path does not reproduce. Please report this.'}
+        ? `Verified: replaying ${check.steps === 1 ? 'this step' : `these ${check.steps} steps`} from the start reproduces the broken rule.`
+        : 'Verification failed: the recorded path does not reproduce. Please report this.'}
     </p>
   );
 }
 
-export function ResultPanel({ run, config, headingRef, idPrefix = 'result' }: Props) {
-  const headingId = `${idPrefix}-heading`;
+function Details({
+  compact,
+  summary,
+  children,
+}: {
+  compact: boolean;
+  summary: string;
+  children: ReactNode;
+}) {
+  if (!compact) return <>{children}</>;
+  return (
+    <details className="result-details">
+      <summary>{summary}</summary>
+      {children}
+    </details>
+  );
+}
+
+export function ResultPanel({
+  run,
+  config,
+  headingRef,
+  idPrefix,
+  headingLevel = 3,
+  compact = false,
+}: Props) {
+  const auto = useId();
+  const headingId = `${idPrefix ?? auto}-heading`;
   const { limits } = config;
 
   if (run.phase === 'idle') {
     return (
       <section className="card result" aria-labelledby={headingId}>
-        <h3 id={headingId} ref={headingRef} tabIndex={-1}>
+        <Heading level={headingLevel} id={headingId} ref={headingRef} tabIndex={-1}>
           Result
-        </h3>
+        </Heading>
         <p>
           Nothing explored yet. Choose settings, then press <strong>Explore</strong>. The search
           will look at up to {count(limits.maxStates)} states and {limits.maxDepth} steps, and tell
@@ -58,9 +89,9 @@ export function ResultPanel({ run, config, headingRef, idPrefix = 'result' }: Pr
     const { stats } = run;
     return (
       <section className="card result" aria-labelledby={headingId} aria-busy="true">
-        <h3 id={headingId} ref={headingRef} tabIndex={-1}>
+        <Heading level={headingLevel} id={headingId} ref={headingRef} tabIndex={-1}>
           Exploring…
-        </h3>
+        </Heading>
         <progress
           max={limits.maxStates}
           value={Math.min(stats.statesDiscovered, limits.maxStates)}
@@ -76,7 +107,7 @@ export function ResultPanel({ run, config, headingRef, idPrefix = 'result' }: Pr
   }
 
   const { outcome } = run;
-  const copy = describeOutcome(outcome);
+  const copy = describeOutcome(outcome, { lesson: compact });
   const { stats } = outcome;
   return (
     <section
@@ -85,52 +116,57 @@ export function ResultPanel({ run, config, headingRef, idPrefix = 'result' }: Pr
       data-status={outcome.status}
     >
       <StatusBadge tone={copy.tone}>{copy.badge}</StatusBadge>
-      <h3 id={headingId} ref={headingRef} tabIndex={-1}>
+      <Heading level={headingLevel} id={headingId} ref={headingRef} tabIndex={-1}>
         {copy.headline}
-      </h3>
+      </Heading>
       {copy.paragraphs.map((text) => (
         <p key={text}>{text}</p>
       ))}
       <ReplayCheck run={run} />
+      {compact ? (
+        <p className="help">The search looked at {count(stats.statesDiscovered)} situations.</p>
+      ) : null}
       {outcome.status !== 'invalid' ? (
-        <dl className="stats">
-          <div>
-            <dt>States found</dt>
-            <dd>{count(stats.statesDiscovered)}</dd>
-          </div>
-          <div>
-            <dt>States expanded</dt>
-            <dd>{count(stats.statesExpanded)}</dd>
-          </div>
-          <div>
-            <dt>Longest path reached</dt>
-            <dd>{stats.maxDepthReached}</dd>
-          </div>
-          <div>
-            <dt>Repeat states skipped</dt>
-            <dd>{count(stats.duplicatesSkipped)}</dd>
-          </div>
-          <div>
-            <dt>Limits applied</dt>
-            <dd>
-              {outcome.limits
-                ? `${outcome.limits.maxDepth} steps, ${count(outcome.limits.maxStates)} states, ${outcome.limits.maxBranching} choices`
-                : 'none'}
-            </dd>
-          </div>
-          <div>
-            <dt>Limits that hid states</dt>
-            <dd>
-              {outcome.status === 'cancelled' || outcome.status === 'exhausted'
-                ? 'not known (search stopped early)'
-                : outcome.limitsHit.length === 0
-                  ? 'none'
-                  : outcome.limitsHit
-                      .map((l) => (l === 'depth' ? 'step limit' : 'branching limit'))
-                      .join(', ')}
-            </dd>
-          </div>
-        </dl>
+        <Details compact={compact} summary="Search details">
+          <dl className="stats">
+            <div>
+              <dt>States found</dt>
+              <dd>{count(stats.statesDiscovered)}</dd>
+            </div>
+            <div>
+              <dt>States expanded</dt>
+              <dd>{count(stats.statesExpanded)}</dd>
+            </div>
+            <div>
+              <dt>Longest path reached</dt>
+              <dd>{stats.maxDepthReached}</dd>
+            </div>
+            <div>
+              <dt>Repeat states skipped</dt>
+              <dd>{count(stats.duplicatesSkipped)}</dd>
+            </div>
+            <div>
+              <dt>Limits applied</dt>
+              <dd>
+                {outcome.limits
+                  ? `${outcome.limits.maxDepth} steps, ${count(outcome.limits.maxStates)} states, ${outcome.limits.maxBranching} choices`
+                  : 'none'}
+              </dd>
+            </div>
+            <div>
+              <dt>Limits that hid states</dt>
+              <dd>
+                {outcome.status === 'cancelled' || outcome.status === 'exhausted'
+                  ? 'not known (search stopped early)'
+                  : outcome.limitsHit.length === 0
+                    ? 'none'
+                    : outcome.limitsHit
+                        .map((l) => (l === 'depth' ? 'step limit' : 'branching limit'))
+                        .join(', ')}
+              </dd>
+            </div>
+          </dl>
+        </Details>
       ) : null}
     </section>
   );

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 're
 import { LESSONS, getLesson } from '../lib/lessons';
 import type { Runner } from '../lib/runner';
 import { LearnMode } from './learn';
+import { MODE_EVENT } from './mode-link';
 import { Workspace } from './workspace';
 
 type Mode = 'learn' | 'sandbox';
@@ -24,43 +25,54 @@ const TABS: Array<{ id: Mode; label: string; hint: string }> = [
 export function AppShell({ runner, syncUrl = true }: Props) {
   const [mode, setMode] = useState<Mode>('learn');
   const [lessonId, setLessonId] = useState<string>((LESSONS[0] as { id: string }).id);
-  const ready = useRef(false);
+  /** True once the address bar has been read, so nothing overwrites a shared link before that. */
+  const [resolved, setResolved] = useState(!syncUrl);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
+  const openMode = useCallback((next: Mode, focusTab: boolean) => {
+    setMode(next);
+    requestAnimationFrame(() => {
+      document.getElementById('practice')?.scrollIntoView?.({ block: 'start' });
+      if (focusTab) tabRefs.current[TABS.findIndex((t) => t.id === next)]?.focus();
+    });
+  }, []);
+
   useEffect(() => {
-    if (!syncUrl) {
-      ready.current = true;
-      return;
-    }
+    // Links from the page header and hero switch mode on every use, not only when the hash changes.
+    const onMode = (event: Event): void => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      if (detail === 'learn' || detail === 'sandbox') openMode(detail, true);
+    };
+    window.addEventListener(MODE_EVENT, onMode);
+    return () => window.removeEventListener(MODE_EVENT, onMode);
+  }, [openMode]);
+
+  useEffect(() => {
+    if (!syncUrl) return;
     const params = new URLSearchParams(window.location.search);
     const requested = params.get('lesson');
+    const hash = window.location.hash;
     // Reading the address bar has to wait for the browser, so these are set after mount.
     /* eslint-disable react-hooks/set-state-in-effect */
     if (requested && getLesson(requested)) setLessonId(requested);
-    if (params.has('t') || window.location.hash === '#sandbox') setMode('sandbox');
+    if (params.has('t') || hash === '#sandbox') setMode('sandbox');
+    setResolved(true);
     /* eslint-enable react-hooks/set-state-in-effect */
-    ready.current = true;
+    if (hash === '#sandbox' || hash === '#learn')
+      openMode(hash === '#sandbox' ? 'sandbox' : 'learn', false);
 
     const onHash = (): void => {
-      if (window.location.hash === '#sandbox') setMode('sandbox');
-      if (window.location.hash === '#learn') setMode('learn');
-      if (window.location.hash === '#sandbox' || window.location.hash === '#learn') {
-        requestAnimationFrame(() =>
-          document
-            .getElementById(window.location.hash === '#sandbox' ? 'panel-sandbox' : 'panel-learn')
-            ?.scrollIntoView({ block: 'start' }),
-        );
-      }
+      if (window.location.hash === '#sandbox') openMode('sandbox', false);
+      if (window.location.hash === '#learn') openMode('learn', false);
     };
     window.addEventListener('hashchange', onHash);
-    if (window.location.hash === '#learn') setMode('learn');
     return () => window.removeEventListener('hashchange', onHash);
-  }, [syncUrl]);
+  }, [syncUrl, openMode]);
 
   useEffect(() => {
-    if (!syncUrl || !ready.current || mode !== 'learn') return;
+    if (!syncUrl || !resolved || mode !== 'learn') return;
     window.history.replaceState(null, '', `?lesson=${lessonId}`);
-  }, [mode, lessonId, syncUrl]);
+  }, [mode, lessonId, syncUrl, resolved]);
 
   const onTabKey = useCallback((event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     const last = TABS.length - 1;

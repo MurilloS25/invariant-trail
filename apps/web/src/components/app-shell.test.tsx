@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
 import { describe, expect, it } from 'vitest';
@@ -60,11 +60,11 @@ describe('AppShell', () => {
     expect(screen.getByText(/common patterns, not guarantees/)).toBeInTheDocument();
 
     await user.click(
-      screen.getByRole('button', { name: /Try the same failures against a protected design/ }),
+      screen.getByRole('button', { name: /Try the same failures against a fixed design/ }),
     );
     const protectedHeading = await screen.findByRole(
       'heading',
-      { name: 'No violation found', level: 3 },
+      { name: 'No violation found', level: 5 },
       { timeout: 15_000 },
     );
     expect(protectedHeading).toBeInTheDocument();
@@ -92,5 +92,37 @@ describe('AppShell', () => {
     expect(await run()).toEqual([]);
     await user.click(screen.getByRole('tab', { name: /Sandbox/ }));
     expect(await run()).toEqual([]);
+  });
+});
+
+describe('AppShell structure', () => {
+  it('keeps every element id unique with both panels mounted and a result in each mode', async () => {
+    const { user, view } = setup();
+    await user.click(screen.getByRole('button', { name: 'Run the simulation' }));
+    await screen.findByRole('heading', { name: 'Rule broken in 5 steps' });
+    await user.click(screen.getByRole('tab', { name: /Sandbox/ }));
+    await user.click(screen.getByRole('button', { name: 'Explore' }));
+    await screen.findAllByRole('heading', { name: 'Rule broken in 5 steps' });
+    const ids = [...view.container.querySelectorAll('[id]')].map((el) => el.id);
+    expect(ids.filter((id, i) => ids.indexOf(id) !== i)).toEqual([]);
+    // Every aria-labelledby points at exactly one existing element.
+    for (const el of view.container.querySelectorAll('[aria-labelledby]')) {
+      for (const id of (el.getAttribute('aria-labelledby') ?? '').split(' ')) {
+        expect(view.container.querySelectorAll(`[id="${id}"]`)).toHaveLength(1);
+      }
+    }
+  });
+
+  it('opens the right tab every time a mode link is used', async () => {
+    const { MODE_EVENT } = await import('./mode-link');
+    setup();
+    window.dispatchEvent(new CustomEvent(MODE_EVENT, { detail: 'sandbox' }));
+    const sandboxTab = await screen.findByRole('tab', { name: /Sandbox/, selected: true });
+    await waitFor(() => expect(sandboxTab).toHaveFocus());
+    window.dispatchEvent(new CustomEvent(MODE_EVENT, { detail: 'learn' }));
+    const learnTab = await screen.findByRole('tab', { name: /Learn/, selected: true });
+    await waitFor(() => expect(learnTab).toHaveFocus());
+    window.dispatchEvent(new CustomEvent(MODE_EVENT, { detail: '<script>' }));
+    expect(screen.getByRole('tab', { name: /Learn/, selected: true })).toBeInTheDocument();
   });
 });
