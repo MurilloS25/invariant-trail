@@ -19,8 +19,6 @@ export interface DesignOption {
 export interface LifecycleNode {
   id: string;
   label: string;
-  x: number;
-  y: number;
 }
 
 export interface LifecycleEdge {
@@ -29,11 +27,14 @@ export interface LifecycleEdge {
   label: string;
 }
 
+/** Grid cell [column, row] for every node. */
+export type LifecycleGrid = Record<string, [number, number]>;
+
 export interface Lifecycle {
-  width: number;
-  height: number;
   nodes: LifecycleNode[];
   edges: LifecycleEdge[];
+  /** Abstract placement for wide containers and for narrow ones; pixels are computed by the view. */
+  grid: { wide: LifecycleGrid; narrow: LifecycleGrid };
   /** Which node the durable data currently sits in. */
   current(db: Obj): string;
 }

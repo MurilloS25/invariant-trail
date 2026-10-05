@@ -12,6 +12,7 @@ export type {
   DesignChoice,
   DesignOption,
   Lifecycle,
+  LifecycleGrid,
   LifecycleEdge,
   LifecycleNode,
   Preset,
@@ -19,3 +20,4 @@ export type {
 } from './templates';
 export * from './golden';
 export * from './view';
+export * from './diagram';

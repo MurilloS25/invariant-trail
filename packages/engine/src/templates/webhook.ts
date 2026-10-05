@@ -81,13 +81,15 @@ export const webhookTemplate: TemplateDef = {
     { name: 'Webhook receiver', role: 'Runs the side effect and updates the subscription.' },
   ],
   lifecycle: {
-    width: 560,
-    height: 190,
     nodes: [
-      { id: 'none', label: 'No subscription', x: 10, y: 70 },
-      { id: 'active', label: 'Active', x: 230, y: 10 },
-      { id: 'cancelled', label: 'Cancelled', x: 230, y: 130 },
+      { id: 'none', label: 'No plan yet' },
+      { id: 'active', label: 'Active' },
+      { id: 'cancelled', label: 'Cancelled' },
     ],
+    grid: {
+      wide: { none: [0, 1], active: [1, 0], cancelled: [1, 2] },
+      narrow: { none: [0, 0], active: [1, 1], cancelled: [0, 2] },
+    },
     edges: [
       { from: 'none', to: 'active', label: 'event 1: activated' },
       { from: 'active', to: 'cancelled', label: 'event 2: cancelled' },

@@ -111,13 +111,15 @@ export const bookingTemplate: TemplateDef = {
     { name: 'Booking service', role: 'Updates the booking and sends the confirmation email.' },
   ],
   lifecycle: {
-    width: 520,
-    height: 210,
     nodes: [
-      { id: 'pending', label: 'Pending', x: 20, y: 80 },
-      { id: 'confirmed', label: 'Confirmed', x: 210, y: 20 },
-      { id: 'cancelled', label: 'Cancelled', x: 210, y: 140 },
+      { id: 'pending', label: 'Pending' },
+      { id: 'confirmed', label: 'Confirmed' },
+      { id: 'cancelled', label: 'Cancelled' },
     ],
+    grid: {
+      wide: { pending: [0, 1], confirmed: [1, 0], cancelled: [1, 2] },
+      narrow: { pending: [0, 0], confirmed: [1, 1], cancelled: [0, 2] },
+    },
     edges: [
       { from: 'pending', to: 'confirmed', label: 'confirm' },
       { from: 'pending', to: 'cancelled', label: 'cancel' },

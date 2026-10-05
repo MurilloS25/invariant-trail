@@ -30,13 +30,15 @@ export const paymentTemplate: TemplateDef = {
     },
   ],
   lifecycle: {
-    width: 560,
-    height: 130,
     nodes: [
-      { id: 'authorized', label: 'Authorized', x: 10, y: 45 },
-      { id: 'captured', label: 'Captured', x: 200, y: 45 },
-      { id: 'refunded', label: 'Refunded', x: 390, y: 45 },
+      { id: 'authorized', label: 'Authorized' },
+      { id: 'captured', label: 'Captured' },
+      { id: 'refunded', label: 'Refunded' },
     ],
+    grid: {
+      wide: { authorized: [0, 0], captured: [1, 0], refunded: [2, 0] },
+      narrow: { authorized: [0, 0], captured: [0, 1], refunded: [0, 2] },
+    },
     edges: [
       { from: 'authorized', to: 'captured', label: 'capture' },
       { from: 'captured', to: 'refunded', label: 'refund' },

@@ -98,13 +98,15 @@ export const inventoryTemplate: TemplateDef = {
     { name: 'Order service', role: 'Takes a unit from stock and creates the order.' },
   ],
   lifecycle: {
-    width: 560,
-    height: 130,
     nodes: [
-      { id: 'available', label: 'Available', x: 10, y: 45 },
-      { id: 'reserved', label: 'Reserved', x: 200, y: 45 },
-      { id: 'ordered', label: 'Ordered', x: 390, y: 45 },
+      { id: 'available', label: 'Available' },
+      { id: 'reserved', label: 'Reserved' },
+      { id: 'ordered', label: 'Ordered' },
     ],
+    grid: {
+      wide: { available: [0, 0], reserved: [1, 0], ordered: [2, 0] },
+      narrow: { available: [0, 0], reserved: [0, 1], ordered: [0, 2] },
+    },
     edges: [
       { from: 'available', to: 'reserved', label: 'take from stock' },
       { from: 'reserved', to: 'ordered', label: 'create order' },
