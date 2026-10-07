@@ -8,6 +8,10 @@ Invariant Trail simulates small, modelled scenarios. It explores retries, duplic
 
 It runs entirely in the browser. There is no server, account, database, LLM, telemetry, or paid service, and nothing a visitor types is ever executed.
 
+## Live demo
+
+[Open Invariant Trail](https://invariant-trail.vercel.app/). It is a static browser application hosted on Vercel; no account is required.
+
 ## Two ways to use it
 
 - **Learn** (default): four guided lessons. Each one states what must never happen, what could go wrong, asks you to predict, runs the simulation, replays the shortest example that breaks the rule, explains why it happened and which idea it teaches, and lists how real systems usually prevent it. You can then run the same failures against a protected design. See [docs/EDUCATION.md](docs/EDUCATION.md).
@@ -75,7 +79,7 @@ All the work is a finite search over a few thousand to tens of thousands of stat
 ## Known limitations and follow-ups
 
 - Search memory is bounded only by the state cap (100,000); there is no byte budget or wall-clock limit.
-- The CSP is a `<meta>` tag (defense in depth). If the site is ever hosted, serve it as a real header with `frame-ancestors 'none'`.
+- The HTML keeps a CSP `<meta>` tag as defense in depth. Production also sends the policy as a response header, including `frame-ancestors 'none'`, on the page and static worker assets through `vercel.json`.
 - CI actions are pinned to major tags, not commit SHAs.
 - Editing a limit while a run is in progress discards that run and its result by design.
 - Deferred: strict JSON import/export, user-authored workflows, liveness properties, per-client budgets, partitions and clock skew.
